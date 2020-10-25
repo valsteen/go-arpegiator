@@ -8,7 +8,6 @@ import (
 )
 
 type midiChannelMessageChan chan midiDefinitions.ChannelMessage
-type notes []midiDefinitions.Note
 type StateChangeConsumer chan notes
 
 type Device struct {
@@ -28,43 +27,13 @@ func pipeRawMessageToChannelMessage(in midi.In) (channel midiChannelMessageChan)
 	return
 }
 
-func (notes notes) insert(note midiDefinitions.Note, pos int) (out notes) {
-	out = append(notes, nil)
-	copy(out[pos+1:], notes[pos:])
-	out[pos] = note
-	return out
-}
-
-func (notes notes) remove(pos int) notes {
-	if pos < len(notes)-1 {
-		copy(notes[pos:], notes[pos+1:])
-	}
-	return notes[:len(notes)-1]
-}
-
 func (device *Device) consume(messageChan midiChannelMessageChan) {
 	for message := range messageChan {
 		if noteMessage, ok := message.(midiDefinitions.NoteMessage); ok {
-			pitchIn := noteMessage.GetPitch()
-
 			if noteMessage.IsNoteOn() {
-				for i, note := range device.notes {
-					switch pitch := note.GetPitch(); {
-					case pitch == pitchIn:
-						return
-					case pitch < pitchIn:
-						device.notes = device.notes.insert(noteMessage, i)
-						return
-					}
-				}
-				device.notes = device.notes.insert(noteMessage, 0)
+				device.notes = device.notes.insert(noteMessage)
 			} else {
-				for i, note := range device.notes {
-					pitch := note.GetPitch()
-					if pitch == pitchIn {
-						device.notes = device.notes.remove(i)
-					}
-				}
+				device.notes = device.notes.remove(noteMessage)
 			}
 
 			for _, consumer := range device.stateConsumers {
@@ -73,7 +42,6 @@ func (device *Device) consume(messageChan midiChannelMessageChan) {
 		} else {
 			fmt.Println("ignored", message)
 		}
-
 	}
 }
 
