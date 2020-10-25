@@ -29,12 +29,7 @@ func pipeRawMessageToChannelMessage(in midi.In) (channel midiChannelMessageChan)
 }
 
 func (notes notes) insert(note midiDefinitions.Note, pos int) (out notes) {
-	if cap(notes) > len(notes) {
-		out = append(notes, nil)
-	} else {
-		out = make([]midiDefinitions.Note, len(notes)+1, len(notes)+1)
-		copy(out, notes[:pos])
-	}
+	out = append(notes, nil)
 	copy(out[pos+1:], notes[pos:])
 	out[pos] = note
 	return out
