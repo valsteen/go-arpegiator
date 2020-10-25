@@ -7,57 +7,56 @@ import (
 	"go-arpegiator/services"
 )
 
-type midiChannelMessageChan chan midiDefinitions.ChannelMessage
-type StateChangeConsumer chan notes
+type StateChangeConsumer chan Notes
 
 type Device struct {
-	notes
-	stateConsumers []StateChangeConsumer
+	Notes
+	notesConsumers []NotesConsumer
 }
 
-func pipeRawMessageToChannelMessage(in midi.In) (channel midiChannelMessageChan) {
-	channel = make(midiChannelMessageChan)
+type ChannelMessageConsumer func(message midiDefinitions.ChannelMessage)
+
+func pipeRawMessageToChannelMessage(in midi.In, consumer ChannelMessageConsumer) {
 	err := in.SetListener(func(data []byte, deltaMicroseconds int64) {
 		midiMessage := midiDefinitions.AsMidiMessage(data)
 		if midiChannelMessage, ok := midiMessage.(midiDefinitions.ChannelMessage); ok {
-			channel <- midiChannelMessage
+			consumer(midiChannelMessage)
 		}
 	})
 	services.MustNot(err)
-	return
 }
 
-func (device *Device) consume(messageChan midiChannelMessageChan) {
-	for message := range messageChan {
-		if noteMessage, ok := message.(midiDefinitions.NoteMessage); ok {
-			if noteMessage.IsNoteOn() {
-				device.notes = device.notes.insert(noteMessage)
-			} else {
-				device.notes = device.notes.remove(noteMessage)
-			}
-
-			for _, consumer := range device.stateConsumers {
-				consumer <- device.notes
-			}
+func (device *Device) consume(message midiDefinitions.ChannelMessage) {
+	if noteMessage, ok := message.(midiDefinitions.NoteMessage); ok {
+		if noteMessage.IsNoteOn() {
+			device.Notes = device.Notes.insert(noteMessage)
 		} else {
-			fmt.Println("ignored", message)
+			device.Notes = device.Notes.remove(noteMessage)
 		}
+
+		for _, consumer := range device.notesConsumers {
+			consumer(device.Notes)
+		}
+	} else {
+		fmt.Println("ignored", message)
 	}
 }
 
 func (device Device) String() string {
-	return fmt.Sprintf("Device state: %s", device.notes)
+	return fmt.Sprintf("Device state: %s", device.Notes)
 }
 
-func New(in midi.In) *Device {
+func NewDevice(in midi.In) *Device {
 	device := Device{
-		notes:          make(notes, 0, 12),
-		stateConsumers: make([]StateChangeConsumer, 0, 10),
+		Notes:          make(Notes, 0, 12),
+		notesConsumers: make([]NotesConsumer, 0, 10),
 	}
-	go device.consume(pipeRawMessageToChannelMessage(in))
+	pipeRawMessageToChannelMessage(in, device.consume)
 	return &device
 }
 
-func (device *Device) AddConsumer(consumer StateChangeConsumer) {
-	device.stateConsumers = append(device.stateConsumers, consumer)
+type NotesConsumer func(notes Notes)
+
+func (device *Device) AddConsumer(consumer NotesConsumer) {
+	device.notesConsumers = append(device.notesConsumers, consumer)
 }

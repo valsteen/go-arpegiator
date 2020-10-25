@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"fmt"
 	"go-arpegiator/definitions"
 	"go-arpegiator/devices"
 	s "go-arpegiator/services"
@@ -20,20 +19,12 @@ type DeviceRunner struct {
 	*midiDefinitions.PortPair
 }
 
-func RunDevice() DeviceRunner {
-	pair := midiDefinitions.NewPortPair("Arp")
+func RunDevice(name string, consumer devices.NotesConsumer) DeviceRunner {
+	pair := midiDefinitions.NewPortPair(name)
 	deviceRunner := DeviceRunner{
-		Device:   devices.New(pair.In),
+		Device:   devices.NewDevice(pair.In),
 		PortPair: pair,
 	}
-
-	stateChangesChan := make(devices.StateChangeConsumer)
-	deviceRunner.AddConsumer(stateChangesChan)
-
-	go func() {
-		for state := range stateChangesChan {
-			fmt.Println(state)
-		}
-	}()
+	deviceRunner.AddConsumer(consumer)
 	return deviceRunner
 }

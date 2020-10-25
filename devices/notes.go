@@ -2,23 +2,23 @@ package devices
 
 import midiDefinitions "go-arpegiator/definitions"
 
-type notes []midiDefinitions.Note
+type Notes []midiDefinitions.Note
 
-func (notes notes) insertAt(note midiDefinitions.Note, pos int) (out notes) {
+func (notes Notes) insertAt(note midiDefinitions.Note, pos int) (out Notes) {
 	out = append(notes, nil)
 	copy(out[pos+1:], notes[pos:])
 	out[pos] = note
 	return out
 }
 
-func (notes notes) removeAt(pos int) notes {
+func (notes Notes) removeAt(pos int) Notes {
 	if pos < len(notes)-1 {
 		copy(notes[pos:], notes[pos+1:])
 	}
 	return notes[:len(notes)-1]
 }
 
-func (notes notes) insert(noteMessage midiDefinitions.NoteMessage) notes {
+func (notes Notes) insert(noteMessage midiDefinitions.NoteMessage) Notes {
 	pitchIn := noteMessage.GetPitch()
 	for i, note := range notes {
 		switch pitch := note.GetPitch(); {
@@ -32,7 +32,7 @@ func (notes notes) insert(noteMessage midiDefinitions.NoteMessage) notes {
 	return append(notes, noteMessage)
 }
 
-func (notes notes) remove(noteMessage midiDefinitions.NoteMessage) notes {
+func (notes Notes) remove(noteMessage midiDefinitions.NoteMessage) Notes {
 	pitchIn := noteMessage.GetPitch()
 	for i, note := range notes {
 		pitch := note.GetPitch()
