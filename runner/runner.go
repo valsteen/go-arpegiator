@@ -28,3 +28,9 @@ func RunDevice(name string, consumer devices.NotesConsumer) DeviceRunner {
 	deviceRunner.AddConsumer(consumer)
 	return deviceRunner
 }
+
+func RunArpInDevice(name string) DeviceRunner {
+	arpInDevice := devices.NewArpInDevice()
+	deviceRunner := RunDevice(name, arpInDevice.Consume)
+	return deviceRunner
+}
