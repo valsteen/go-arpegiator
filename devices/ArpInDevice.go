@@ -7,7 +7,13 @@ type ArpInDevice struct {
 }
 
 func (d ArpInDevice) Consume(notes Notes) {
-	// TODO
+	// TODO replace note array with set
+	/*
+	operations needed:
+	- diff between current/previous state
+	- obviously need a set structure
+	- remove DIY operations and use go's set
+	 */
 }
 
 func NewArpInDevice() * ArpInDevice {

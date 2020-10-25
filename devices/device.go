@@ -7,8 +7,6 @@ import (
 	"go-arpegiator/services"
 )
 
-type StateChangeConsumer chan Notes
-
 type Device struct {
 	Notes
 	notesConsumers []NotesConsumer
@@ -29,9 +27,9 @@ func pipeRawMessageToChannelMessage(in midi.In, consumer ChannelMessageConsumer)
 func (device *Device) consume(message midiDefinitions.ChannelMessage) {
 	if noteMessage, ok := message.(midiDefinitions.NoteMessage); ok {
 		if noteMessage.IsNoteOn() {
-			device.Notes = device.Notes.insert(noteMessage)
+			device.Notes[noteMessage.GetNoteHash()] = noteMessage
 		} else {
-			device.Notes = device.Notes.remove(noteMessage)
+			delete(device.Notes, noteMessage.GetNoteHash())
 		}
 
 		for _, consumer := range device.notesConsumers {
@@ -43,12 +41,12 @@ func (device *Device) consume(message midiDefinitions.ChannelMessage) {
 }
 
 func (device Device) String() string {
-	return fmt.Sprintf("Device state: %s", device.Notes)
+	return fmt.Sprintf("Device state: %v", device.Notes)
 }
 
 func NewDevice(in midi.In) *Device {
 	device := Device{
-		Notes:          make(Notes, 0, 12),
+		Notes:          make(Notes),
 		notesConsumers: make([]NotesConsumer, 0, 10),
 	}
 	pipeRawMessageToChannelMessage(in, device.consume)

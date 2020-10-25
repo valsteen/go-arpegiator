@@ -8,6 +8,7 @@ type rawMidiMessage []byte
 
 type noteMessage rawMidiMessage
 type ccMessage rawMidiMessage
+type NoteHash string
 
 type ChannelMessage interface {
 	MidiMessage
@@ -18,6 +19,7 @@ type Note interface {
 	ChannelMessage
 	GetPitch() byte
 	GetVelocity() byte
+	GetNoteHash() NoteHash
 }
 
 type NoteMessage interface {
@@ -45,6 +47,10 @@ func (message noteMessage) GetVelocity() byte {
 
 func (message noteMessage) IsNoteOn() bool {
 	return message[0] >= 144 && message[0] < 160
+}
+
+func (message noteMessage) GetNoteHash() NoteHash {
+	return NoteHash([]byte{message.GetChannel(), message.GetPitch()})
 }
 
 func (message ccMessage) GetCC() byte {
@@ -83,4 +89,8 @@ func (message noteMessage) String() string {
 func (message ccMessage) String() string {
 	return fmt.Sprintf("cc: channel %d cc %d value %d", message.GetChannel(), message.GetCC(),
 		message.GetValue())
+}
+
+func (noteHash NoteHash) String() string {
+	return fmt.Sprintf("(%d %d)", noteHash[0], noteHash[1])
 }
