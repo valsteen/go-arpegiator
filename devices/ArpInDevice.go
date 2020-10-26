@@ -13,7 +13,7 @@ type ArpInDevice struct {
 	switches ArpSwitchSet
 }
 
-func (d *ArpInDevice) Consume(notes NoteSet) {
+func (d *ArpInDevice) ConsumeNoteSet(notes NoteSet) {
 	newSwitches := newArpSwitchSet(notes)
 	added, removed := d.switches.Compare(newSwitches)
 	fmt.Printf("added: %v removed: %v\n", added, removed)

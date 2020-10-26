@@ -19,18 +19,18 @@ type DeviceRunner struct {
 	*midiDefinitions.PortPair
 }
 
-func RunDevice(name string, consumer devices.NotesConsumer) DeviceRunner {
+func RunNoteDevice(name string, consumer devices.NoteSetConsumer) DeviceRunner {
 	pair := midiDefinitions.NewPortPair(name)
 	deviceRunner := DeviceRunner{
 		NoteDevice: devices.NewNoteDevice(pair.In),
 		PortPair:   pair,
 	}
-	deviceRunner.AddConsumer(consumer)
+	deviceRunner.AddNoteSetConsumer(consumer)
 	return deviceRunner
 }
 
 func RunArpInDevice(name string) DeviceRunner {
 	arpInDevice := devices.NewArpInDevice()
-	deviceRunner := RunDevice(name, arpInDevice.Consume)
+	deviceRunner := RunNoteDevice(name, arpInDevice.ConsumeNoteSet)
 	return deviceRunner
 }
