@@ -8,26 +8,23 @@ import (
 )
 
 type PortPair struct {
-	*rtmididrv.Driver
 	midi.In
 	midi.Out
 }
 
-func NewPortPair(name string) *PortPair {
-	drv, err := rtmididrv.New()
-
+func NewPortPair(name string, driver *rtmididrv.Driver) *PortPair {
+	var err error
+	portPair := PortPair{}
+	portPair.In, err = driver.OpenVirtualIn(name)
 	services.MustNot(err)
-
-	in, err := drv.OpenVirtualIn(name)
+	portPair.Out, err = driver.OpenVirtualOut(name)
 	services.MustNot(err)
-	out, err := drv.OpenVirtualOut(name)
-	services.MustNot(err)
-
-	return &PortPair{drv, in, out}
+	return &portPair
 }
 
 func (pair *PortPair) Close() {
-	_ = pair.Driver.Close()
+	_ = pair.In.Close()
+	_ = pair.Out.Close()
 }
 
 func (pair PortPair) MidiPassThrough(data []byte, deltaMicroseconds int64) {

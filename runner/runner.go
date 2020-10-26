@@ -1,36 +1,48 @@
 package runner
 
 import (
+	"fmt"
+	"gitlab.com/gomidi/midi"
+	"gitlab.com/gomidi/rtmididrv"
 	"go-arpegiator/definitions"
 	"go-arpegiator/devices"
 	s "go-arpegiator/services"
 )
 
-func POC() {
-	pair := midiDefinitions.NewPortPair("Arp")
-	defer pair.Close()
-
-	err := pair.SetListener(pair.MidiPassThrough)
-	s.MustNot(err)
+type ArpegiatorRunner struct {
+	*rtmididrv.Driver
+	midi.In
+	arpInPortPair *midiDefinitions.PortPair
 }
 
-type DeviceRunner struct {
-	*devices.NoteDevice
-	*midiDefinitions.PortPair
-}
-
-func RunNoteDevice(name string, consumer devices.NoteSetConsumer) DeviceRunner {
-	pair := midiDefinitions.NewPortPair(name)
-	deviceRunner := DeviceRunner{
-		NoteDevice: devices.NewNoteDevice(pair.In),
-		PortPair:   pair,
+func (a ArpegiatorRunner) Close() {
+	_ = a.In.Close()
+	a.arpInPortPair.Close()
+	if a.Driver != nil {
+		_ = a.Driver.Close()
 	}
-	deviceRunner.AddNoteSetConsumer(consumer)
-	return deviceRunner
 }
 
-func RunArpInDevice(name string) DeviceRunner {
-	arpInDevice := devices.NewArpInDevice()
-	deviceRunner := RunNoteDevice(name, arpInDevice.ConsumeNoteSet)
-	return deviceRunner
+func RunArpegiator(notesInName, arpName string) ArpegiatorRunner {
+	driver, err := rtmididrv.New()
+	s.MustNot(err)
+
+	in, err := driver.OpenVirtualIn(notesInName)
+	s.MustNot(err)
+
+	arpegiatorRunner := ArpegiatorRunner{
+		Driver:        driver,
+		In:            in,
+		arpInPortPair: midiDefinitions.NewPortPair(arpName, driver),
+	}
+
+	noteInDevice := devices.NewNoteDevice(arpegiatorRunner.In)
+	arpInDevice := devices.NewNoteDevice(arpegiatorRunner.arpInPortPair.In)
+	arpegiator := devices.NewArpegiator(noteInDevice, arpInDevice)
+
+	arpegiator.AddMessageConsumer(func(message midiDefinitions.ChannelMessage) {
+		fmt.Println("Arp out message", message)
+	})
+
+	return arpegiatorRunner
 }
