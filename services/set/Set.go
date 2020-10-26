@@ -42,7 +42,6 @@ func (s Set) Diff(s2 Set) (added []Element, removed []Element) {
 	return
 }
 
-
 func (s Set) String() string {
 	elements := make([]Element, 0, len(s))
 	for _, element := range s {
