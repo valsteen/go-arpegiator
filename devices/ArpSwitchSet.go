@@ -9,45 +9,36 @@ import (
 type ArpSwitchSet set.Set
 
 func newArpSwitchSet(notes NoteSet) ArpSwitchSet {
-	switches := make(ArpSwitchSet)
-	notes.Iterate(func(e midiDefinitions.Note) {
-		switches.Add(ArpSwitch{Note: e})
+	switches := make(ArpSwitchSet, len(notes))
+	notes.Iterate(func(note midiDefinitions.Note) {
+		set.Set(switches).Add(ArpSwitch{Note: note})
 	})
 	return switches
 }
 
-func (s ArpSwitchSet) Delete(e ArpSwitch) {
-	set.Set(s).Delete(e)
+func convertElementToArpSwitch(e set.Element) ArpSwitch {
+	arpSwitch, ok := e.(ArpSwitch)
+	services.Must(ok)
+	return arpSwitch
 }
 
-func (s ArpSwitchSet) Add(e ArpSwitch) {
-	set.Set(s).Add(e)
+func newArpSwitchSetSlice(s []set.Element) []ArpSwitch {
+	arpSwitches := make([]ArpSwitch, len(s))
+
+	for i, e := range s {
+		arpSwitches[i] = convertElementToArpSwitch(e)
+	}
+
+	return arpSwitches
 }
 
-func (s ArpSwitchSet) Diff(s2 ArpSwitchSet) (added []ArpSwitch, removed []ArpSwitch) {
-	_added, _removed := set.Set(s).Diff(set.Set(s2))
-	added = make([]ArpSwitch, len(_added))
-	removed = make([]ArpSwitch, len(_removed))
-
-	for i, e := range _added {
-		arpSwitch, ok := e.(ArpSwitch)
-		services.Must(ok)
-		added[i] = arpSwitch
-	}
-
-	for i, e := range _removed {
-		arpSwitch, ok := e.(ArpSwitch)
-		services.Must(ok)
-		removed[i] = arpSwitch
-	}
-
-	return
+func (s ArpSwitchSet) Compare(s2 ArpSwitchSet) ([]ArpSwitch, []ArpSwitch) {
+	_added, _removed := set.Set(s).Compare(set.Set(s2))
+	return newArpSwitchSetSlice(_added), newArpSwitchSetSlice(_removed)
 }
 
 func (s ArpSwitchSet) Iterate(cb func(e ArpSwitch)) {
 	for _, e := range s {
-		note, ok := e.(ArpSwitch)
-		services.Must(ok)
-		cb(note)
+		cb(convertElementToArpSwitch(e))
 	}
 }

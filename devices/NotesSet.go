@@ -8,38 +8,29 @@ import (
 
 type NoteSet set.Set
 
-func (s NoteSet) Delete(e midiDefinitions.Note) {
-	set.Set(s).Delete(e)
+func convertElementToNote(e set.Element) midiDefinitions.Note {
+	note, ok := e.(midiDefinitions.Note)
+	services.Must(ok)
+	return note
 }
 
-func (s NoteSet) Add(e midiDefinitions.Note) {
-	set.Set(s).Add(e)
+func newNoteSetSlice(s []set.Element) []midiDefinitions.Note {
+	notes := make([]midiDefinitions.Note, len(s))
+
+	for i, e := range s {
+		notes[i] = convertElementToNote(e)
+	}
+
+	return notes
 }
 
-func (s NoteSet) Diff(s2 NoteSet) (added []midiDefinitions.Note, removed []midiDefinitions.Note) {
-	_added, _removed := set.Set(s).Diff(set.Set(s2))
-	added = make([]midiDefinitions.Note, len(_added))
-	removed = make([]midiDefinitions.Note, len(_removed))
-
-	for i, e := range _added {
-		note, ok := e.(midiDefinitions.Note)
-		services.Must(ok)
-		added[i] = note
-	}
-
-	for i, e := range _removed {
-		note, ok := e.(midiDefinitions.Note)
-		services.Must(ok)
-		removed[i] = note
-	}
-
-	return
+func (s NoteSet) Compare(s2 NoteSet) (added []midiDefinitions.Note, removed []midiDefinitions.Note) {
+	_added, _removed := set.Set(s).Compare(set.Set(s2))
+	return newNoteSetSlice(_added), newNoteSetSlice(_removed)
 }
 
 func (s NoteSet) Iterate(cb func(e midiDefinitions.Note)) {
 	for _, e := range s {
-		note, ok := e.(midiDefinitions.Note)
-		services.Must(ok)
-		cb(note)
+		cb(convertElementToNote(e))
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"gitlab.com/gomidi/midi"
 	midiDefinitions "go-arpegiator/definitions"
 	"go-arpegiator/services"
+	"go-arpegiator/services/set"
 )
 
 type NoteDevice struct {
@@ -27,9 +28,9 @@ func pipeRawMessageToChannelMessage(in midi.In, consumer ChannelMessageConsumer)
 func (device *NoteDevice) consumeNotes(message midiDefinitions.ChannelMessage) {
 	if noteMessage, ok := message.(midiDefinitions.NoteMessage); ok {
 		if noteMessage.IsNoteOn() {
-			device.Notes.Add(noteMessage)
+			set.Set(device.Notes).Add(noteMessage)
 		} else {
-			device.Notes.Delete(noteMessage)
+			set.Set(device.Notes).Delete(noteMessage)
 		}
 
 		for _, consumer := range device.notesConsumers {

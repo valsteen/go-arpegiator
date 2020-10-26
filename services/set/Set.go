@@ -18,28 +18,20 @@ func (s Set) Add(e Element) {
 	s[e.Hash()] = e
 }
 
-func (s Set) Diff(s2 Set) (added []Element, removed []Element) {
-	max := len(s)
-	if len(s2) > max {
-		max = len(s2)
-	}
-
-	added = make([]Element, 0, max)
-	removed = make([]Element, 0, max)
+func (s Set) Subtract(s2 Set) []Element {
+	result := make([]Element, 0, len(s))
 
 	for key, e := range s {
 		if _, found := s2[key]; !found {
-			removed = append(removed, e)
+			result = append(result, e)
 		}
 	}
 
-	for key, e := range s2 {
-		if _, found := s[key]; !found {
-			added = append(added, e)
-		}
-	}
+	return result
+}
 
-	return
+func (s Set) Compare(s2 Set) (added []Element, removed []Element) {
+	return s2.Subtract(s), s.Subtract(s2)
 }
 
 func (s Set) String() string {
