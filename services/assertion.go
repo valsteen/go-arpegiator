@@ -7,3 +7,9 @@ func MustNot(err interface{}) {
 		log.Fatal(err)
 	}
 }
+
+func Must(ok bool) {
+	if !ok {
+		log.Fatal()
+	}
+}

@@ -5,10 +5,11 @@ import (
 	"gitlab.com/gomidi/midi"
 	midiDefinitions "go-arpegiator/definitions"
 	"go-arpegiator/services"
+	"go-arpegiator/services/set"
 )
 
 type Device struct {
-	Notes
+	Notes set.Set
 	notesConsumers []NotesConsumer
 }
 
@@ -25,11 +26,12 @@ func pipeRawMessageToChannelMessage(in midi.In, consumer ChannelMessageConsumer)
 }
 
 func (device *Device) consume(message midiDefinitions.ChannelMessage) {
+	// oops type assertion fails I don't even know why
 	if noteMessage, ok := message.(midiDefinitions.NoteMessage); ok {
 		if noteMessage.IsNoteOn() {
-			device.Notes[noteMessage.GetNoteHash()] = noteMessage
+			device.Notes.Add(noteMessage)
 		} else {
-			delete(device.Notes, noteMessage.GetNoteHash())
+			device.Notes.Delete(noteMessage)
 		}
 
 		for _, consumer := range device.notesConsumers {
@@ -46,14 +48,14 @@ func (device Device) String() string {
 
 func NewDevice(in midi.In) *Device {
 	device := Device{
-		Notes:          make(Notes),
+		Notes:          make(set.Set),
 		notesConsumers: make([]NotesConsumer, 0, 10),
 	}
 	pipeRawMessageToChannelMessage(in, device.consume)
 	return &device
 }
 
-type NotesConsumer func(notes Notes)
+type NotesConsumer func(notes set.Set)
 
 func (device *Device) AddConsumer(consumer NotesConsumer) {
 	device.notesConsumers = append(device.notesConsumers, consumer)

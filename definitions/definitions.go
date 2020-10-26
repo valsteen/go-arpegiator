@@ -1,25 +1,25 @@
 package midiDefinitions
 
-import "fmt"
+import (
+	"fmt"
+	"go-arpegiator/services/set"
+)
 
 type MidiMessage interface{} // placeholder for now, can be cast to anything in this form
-
 type rawMidiMessage []byte
-
 type noteMessage rawMidiMessage
 type ccMessage rawMidiMessage
-type NoteHash string
-
 type ChannelMessage interface {
 	MidiMessage
 	GetChannel() byte
 }
+type NoteHash set.Hash
 
 type Note interface {
 	ChannelMessage
 	GetPitch() byte
 	GetVelocity() byte
-	GetNoteHash() NoteHash
+	set.Element
 }
 
 type NoteMessage interface {
@@ -49,8 +49,8 @@ func (message noteMessage) IsNoteOn() bool {
 	return message[0] >= 144 && message[0] < 160
 }
 
-func (message noteMessage) GetNoteHash() NoteHash {
-	return NoteHash([]byte{message.GetChannel(), message.GetPitch()})
+func (message noteMessage) Hash() set.Hash {
+	return set.Hash([]byte{message.GetChannel(), message.GetPitch()})
 }
 
 func (message ccMessage) GetCC() byte {

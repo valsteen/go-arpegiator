@@ -3,22 +3,24 @@ package devices
 import (
 	"fmt"
 	midiDefinitions "go-arpegiator/definitions"
+	"go-arpegiator/services"
+	"go-arpegiator/services/set"
 )
 
 type ArpSwitch struct {
 	midiDefinitions.Note
 }
 
-type switches map[midiDefinitions.NoteHash]ArpSwitch
-
 type ArpInDevice struct {
-	switches
+	switches set.Set
 }
 
-func (d ArpInDevice) Consume(notes Notes) {
-	d.switches = make(switches) // just reset for now
-	for hash, note := range notes {
-		d.switches[hash] = ArpSwitch{Note: note}
+func (d ArpInDevice) Consume(notes set.Set) {
+	d.switches = make(set.Set) // just reset for now
+	for _, element := range notes {
+		note, ok := element.(midiDefinitions.Note)
+		services.Must(ok)
+		d.switches.Add(ArpSwitch{Note: note})
 	}
 	fmt.Println(d.switches)
 }
@@ -38,6 +40,6 @@ func (a ArpSwitch) String() string {
 
 func NewArpInDevice() *ArpInDevice {
 	return &ArpInDevice{
-		switches: make(switches),
+		switches: make(set.Set),
 	}
 }
