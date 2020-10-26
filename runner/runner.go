@@ -15,15 +15,15 @@ func POC() {
 }
 
 type DeviceRunner struct {
-	*devices.Device
+	*devices.NoteDevice
 	*midiDefinitions.PortPair
 }
 
 func RunDevice(name string, consumer devices.NotesConsumer) DeviceRunner {
 	pair := midiDefinitions.NewPortPair(name)
 	deviceRunner := DeviceRunner{
-		Device:   devices.NewDevice(pair.In),
-		PortPair: pair,
+		NoteDevice: devices.NewNoteDevice(pair.In),
+		PortPair:   pair,
 	}
 	deviceRunner.AddConsumer(consumer)
 	return deviceRunner
