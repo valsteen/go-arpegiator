@@ -15,14 +15,11 @@ type ArpInDevice struct {
 	switches set.Set
 }
 
-func (d ArpInDevice) Consume(notes set.Set) {
-	d.switches = make(set.Set) // just reset for now
-	for _, element := range notes {
-		note, ok := element.(midiDefinitions.Note)
-		services.Must(ok)
-		d.switches.Add(ArpSwitch{Note: note})
-	}
-	fmt.Println(d.switches)
+func (d * ArpInDevice) Consume(notes set.Set) {
+	newSwitches := NewSwitches(notes)
+	added, removed := d.switches.Diff(newSwitches)
+	fmt.Printf("added: %v removed: %v\n", added, removed)
+	d.switches = newSwitches
 }
 
 func (a ArpSwitch) GetIndex() byte {
@@ -42,4 +39,14 @@ func NewArpInDevice() *ArpInDevice {
 	return &ArpInDevice{
 		switches: make(set.Set),
 	}
+}
+
+func NewSwitches(notes set.Set) set.Set {
+	switches := make(set.Set)
+	for _, element := range notes {
+		note, ok := element.(midiDefinitions.Note)
+		services.Must(ok)
+		switches.Add(ArpSwitch{Note: note})
+	}
+	return switches
 }
