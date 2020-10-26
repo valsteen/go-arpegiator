@@ -17,8 +17,8 @@ type ArpInDevice struct {
 
 func (d ArpInDevice) Consume(notes Notes) {
 	d.switches = make(switches) // just reset for now
-	for _, note := range notes {
-		d.switches[note.GetNoteHash()] = ArpSwitch{Note: note}
+	for hash, note := range notes {
+		d.switches[hash] = ArpSwitch{Note: note}
 	}
 	fmt.Println(d.switches)
 }
