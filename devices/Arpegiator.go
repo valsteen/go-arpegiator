@@ -5,6 +5,12 @@ import (
 	midiDefinitions "go-arpegiator/definitions"
 )
 
+/*
+remaining work:
+- given incoming arpswitch, arpegiator produces another set of notes on based on noteon on note in device, modulated
+  by arp switch
+- this is sent to notes out device which produces the note on/off message based on its own noteson state
+ */
 type Arpegiator struct {
 	notes []midiDefinitions.NoteOnMessage
 	ArpSwitchSet
@@ -59,9 +65,3 @@ func (a *Arpegiator) send(message []byte) {
 		consumer(message)
 	}
 }
-
-func (a *Arpegiator) AddMessageConsumer(consumer MessageConsumer) {
-	a.messageConsumers = append(a.messageConsumers, consumer)
-}
-
-type MessageConsumer func([]byte)
