@@ -30,7 +30,7 @@ func (device *NotesInDevice) consumeMessage(channelMessage midiDefinitions.Chann
 
 func NewNoteInDevice(in midi.In) *NotesInDevice {
 	notesInDevice := NotesInDevice{
-		NoteSet:      make(NoteSet, 12),
+		NoteSet:          make(NoteSet, 12),
 		noteSetConsumers: make([]NoteSetConsumer, 0, 10),
 	}
 	pipeRawMessageToChannelMessage(in, notesInDevice.consumeMessage)

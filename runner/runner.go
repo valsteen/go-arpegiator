@@ -38,12 +38,15 @@ func RunArpegiator(notesInName, arpName string) ArpegiatorRunner {
 
 	notesInDevice := devices.NewNoteInDevice(arpegiatorRunner.In)
 	arpInDevice := devices.NewNoteInDevice(arpegiatorRunner.arpInPortPair.In)
+
 	arpegiator := devices.NewArpegiator(notesInDevice, arpInDevice)
 
-	arpegiator.AddMessageConsumer(func(data []byte) {
+	notesOutDevice := devices.NewNoteOutDevice()
+	arpegiator.AddNoteSetConsumer(notesOutDevice.ConsumeNoteSet)
+	notesOutDevice.AddMessageConsumer(func(data []byte) {
+		fmt.Println(data)
 		_, err = arpegiatorRunner.arpInPortPair.Out.Write(data)
 		s.MustNot(err)
-		fmt.Println("Arp out message", data)
 	})
 
 	return arpegiatorRunner

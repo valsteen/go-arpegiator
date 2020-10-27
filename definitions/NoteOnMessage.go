@@ -29,7 +29,7 @@ func (message NoteOnMessage) String() string {
 		message.GetVelocity())
 }
 
-func MakeNoteOnMessage(channel, pitch, velocity byte) NoteOnMessage {
+func NewNoteOnMessage(channel, pitch, velocity byte) NoteOnMessage {
 	message := make([]byte, 3)
 	message[0] = channel + 144
 	message[1] = pitch
