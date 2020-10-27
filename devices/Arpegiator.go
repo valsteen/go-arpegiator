@@ -10,7 +10,7 @@ type Arpegiator struct {
 	noteSetConsumers []NoteSetConsumer
 }
 
-func NewArpegiator(noteIn *NotesInDevice, arpIn *NotesInDevice) *Arpegiator {
+func NewArpegiator(noteIn INotesInDevice, arpIn *NotesInDevice) *Arpegiator {
 	arpegiator := Arpegiator{
 		notes:            make([]midiDefinitions.NoteOnMessage, 0, 12),
 		noteSetConsumers: make([]NoteSetConsumer, 0, 10),
@@ -27,21 +27,26 @@ func (a *Arpegiator) consumeInNoteSet(noteSet NoteSet) {
 }
 
 func (a *Arpegiator) consumeArpSwitchSet(arpSwitchSet ArpSwitchSet) {
-	noteSet := make(NoteSet)
+	noteSet := NoteSet{make(set.Set)}
 	arpSwitchSet.Iterate(func(e ArpSwitch) {
 		index := int(e.GetIndex())
 		if index < len(a.notes) {
 			note := a.notes[index]
-			noteOut := midiDefinitions.NewNoteOnMessage(note.GetChannel(), note.GetPitch(), e.GetVelocity())
-			set.Set(noteSet).Add(noteOut)
+			velocity := e.GetVelocity()
+			if note.GetVelocity() == 0 {
+				velocity = 0 // sticky dead note
+			}
+
+			noteOut := midiDefinitions.NewNoteOnMessage(note.GetChannel(), note.GetPitch(), velocity)
+			noteSet.Add(noteOut)
 		}
 	})
 	a.send(noteSet)
 }
 
-func (a *Arpegiator) send(set NoteSet) {
+func (a *Arpegiator) send(noteSet NoteSet) {
 	for _, consumer := range a.noteSetConsumers {
-		consumer(set)
+		consumer(noteSet)
 	}
 }
 

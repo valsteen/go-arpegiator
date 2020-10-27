@@ -2,39 +2,46 @@ package devices
 
 import (
 	"fmt"
-	"gitlab.com/gomidi/midi"
 	midiDefinitions "go-arpegiator/definitions"
 	"go-arpegiator/services/set"
 )
+
+type INotesInDevice interface {
+	AddNoteSetConsumer(consumer NoteSetConsumer)
+}
 
 type NotesInDevice struct {
 	NoteSet
 	noteSetConsumers []NoteSetConsumer
 }
 
-func (device *NotesInDevice) consumeMessage(channelMessage midiDefinitions.ChannelMessage) {
+func (device *NotesInDevice) ConsumeMessage(channelMessage midiDefinitions.ChannelMessage) {
 	switch message := channelMessage.(type) {
 	case midiDefinitions.NoteOnMessage:
-		set.Set(device.NoteSet).Add(message)
+		device.NoteSet.Add(message)
 	case midiDefinitions.NoteOffMessage:
-		set.Set(device.NoteSet).Delete(message)
+		device.NoteSet.Delete(message)
 	default:
 		fmt.Println("ignored", channelMessage)
 		return
 	}
+	device.send()
+}
 
+func (device *NotesInDevice) send() {
 	for _, consumer := range device.noteSetConsumers {
 		consumer(device.NoteSet)
 	}
 }
 
-func NewNoteInDevice(in midi.In) *NotesInDevice {
-	notesInDevice := NotesInDevice{
-		NoteSet:          make(NoteSet, 12),
-		noteSetConsumers: make([]NoteSetConsumer, 0, 10),
+func NewNoteInDevice() *NotesInDevice {
+	noteSetConsumers := make([]NoteSetConsumer, 0, 10)
+	notesInDevice := &NotesInDevice{
+		NoteSet:          NoteSet{make(set.Set, 12)},
+		noteSetConsumers: noteSetConsumers,
 	}
-	pipeRawMessageToChannelMessage(in, notesInDevice.consumeMessage)
-	return &notesInDevice
+	_ = INotesInDevice(notesInDevice) // interface check
+	return notesInDevice
 }
 
 func (device *NotesInDevice) AddNoteSetConsumer(consumer NoteSetConsumer) {

@@ -2,6 +2,7 @@ package devices
 
 import (
 	midiDefinitions "go-arpegiator/definitions"
+	"go-arpegiator/services/set"
 )
 
 type NotesOutDevice struct {
@@ -24,13 +25,17 @@ func (device *NotesOutDevice) ConsumeNoteSet(noteSet NoteSet) {
 	}
 
 	for _, noteOnMessage := range added {
-		device.send(
-			midiDefinitions.NewNoteOnMessage(
-				noteOnMessage.GetChannel(),
-				noteOnMessage.GetPitch(),
-				noteOnMessage.GetVelocity(),
-			),
-		)
+		if noteOnMessage.GetVelocity() > 0 {
+			// velocity 0 is a sticky dead note,
+			// we keep other notes in position and don't play this one
+			device.send(
+				midiDefinitions.NewNoteOnMessage(
+					noteOnMessage.GetChannel(),
+					noteOnMessage.GetPitch(),
+					noteOnMessage.GetVelocity(),
+				),
+			)
+		}
 	}
 
 	device.noteSet = noteSet
@@ -40,7 +45,7 @@ func (device *NotesOutDevice) ConsumeNoteSet(noteSet NoteSet) {
 
 func NewNoteOutDevice() *NotesOutDevice {
 	notesInDevice := NotesOutDevice{
-		noteSet:          make(NoteSet, 12),
+		noteSet:          NoteSet{make(set.Set, 12)},
 		messageConsumers: make([]MessageConsumer, 0, 10),
 	}
 	return &notesInDevice

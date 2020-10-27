@@ -8,7 +8,7 @@ import (
 
 type ChannelMessageConsumer func(message midiDefinitions.ChannelMessage)
 
-func pipeRawMessageToChannelMessage(in midi.In, consumer ChannelMessageConsumer) {
+func PipeRawMessageToChannelMessage(in midi.In, consumer ChannelMessageConsumer) {
 	err := in.SetListener(func(data []byte, deltaMicroseconds int64) {
 		midiMessage := midiDefinitions.AsMidiMessage(data)
 		if midiChannelMessage, ok := midiMessage.(midiDefinitions.ChannelMessage); ok {

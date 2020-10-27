@@ -6,14 +6,16 @@ import (
 	"go-arpegiator/services/set"
 )
 
-type ArpSwitchSet set.Set
+type ArpSwitchSet struct {
+	set.Set
+}
 
 func newArpSwitchSet(notes NoteSet) ArpSwitchSet {
-	switches := make(ArpSwitchSet, len(notes))
+	switches := make(set.Set, len(notes.Set))
 	notes.Iterate(func(note midiDefinitions.NoteOnMessage) {
-		set.Set(switches).Add(ArpSwitch(note))
+		switches.Add(ArpSwitch(note))
 	})
-	return switches
+	return ArpSwitchSet{switches}
 }
 
 func convertElementToArpSwitch(e set.Element) ArpSwitch {
@@ -33,12 +35,12 @@ func newArpSwitchSetSlice(s []set.Element) []ArpSwitch {
 }
 
 func (s ArpSwitchSet) Compare(s2 ArpSwitchSet) ([]ArpSwitch, []ArpSwitch) {
-	_added, _removed := set.Set(s).Compare(set.Set(s2))
+	_added, _removed := s.Set.Compare(s2.Set)
 	return newArpSwitchSetSlice(_added), newArpSwitchSetSlice(_removed)
 }
 
 func (s ArpSwitchSet) Iterate(cb func(e ArpSwitch)) {
-	for _, e := range s {
+	for _, e := range s.Set {
 		cb(convertElementToArpSwitch(e))
 	}
 }

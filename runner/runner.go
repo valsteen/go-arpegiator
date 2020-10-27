@@ -36,8 +36,11 @@ func RunArpegiator(notesInName, arpName string) ArpegiatorRunner {
 		arpInPortPair: midiDefinitions.NewPortPair(arpName, driver),
 	}
 
-	notesInDevice := devices.NewNoteInDevice(arpegiatorRunner.In)
-	arpInDevice := devices.NewNoteInDevice(arpegiatorRunner.arpInPortPair.In)
+	notesInDevice := devices.StickyNotesInDevice{NotesInDevice: devices.NewNoteInDevice()}
+	//notesInDevice := devices.NewNoteInDevice()
+	devices.PipeRawMessageToChannelMessage(arpegiatorRunner.In, notesInDevice.ConsumeMessage)
+	arpInDevice := devices.NewNoteInDevice()
+	devices.PipeRawMessageToChannelMessage(arpegiatorRunner.arpInPortPair.In, arpInDevice.ConsumeMessage)
 
 	arpegiator := devices.NewArpegiator(notesInDevice, arpInDevice)
 
