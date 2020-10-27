@@ -1,18 +1,21 @@
 package devices
 
-import "fmt"
+import (
+	"fmt"
+	midiDefinitions "go-arpegiator/definitions"
+)
 
 type Arpegiator struct {
-	NoteSet
+	notes []midiDefinitions.NoteOnMessage
 	ArpSwitchSet
-	messageConsumers []ChannelMessageConsumer
+	messageConsumers []MessageConsumer
 }
 
-func NewArpegiator(noteIn *NoteDevice, arpIn *NoteDevice) *Arpegiator {
+func NewArpegiator(noteIn *NotesInDevice, arpIn *NotesInDevice) *Arpegiator {
 	arpegiator := Arpegiator{
-		NoteSet:          make(NoteSet, 12),
+		notes:            make([]midiDefinitions.NoteOnMessage, 0, 12),
 		ArpSwitchSet:     make(ArpSwitchSet, 12),
-		messageConsumers: make([]ChannelMessageConsumer, 0, 10),
+		messageConsumers: make([]MessageConsumer, 0, 10),
 	}
 	noteIn.AddNoteSetConsumer(arpegiator.consumeInNoteSet)
 	arpIn.AddNoteSetConsumer(func(noteSet NoteSet) {
@@ -22,15 +25,43 @@ func NewArpegiator(noteIn *NoteDevice, arpIn *NoteDevice) *Arpegiator {
 }
 
 func (a *Arpegiator) consumeInNoteSet(noteSet NoteSet) {
-	a.NoteSet = noteSet
+	a.notes = noteSet.Slice()
 }
 
 func (a *Arpegiator) consumeArpSwitchSet(arpSwitchSet ArpSwitchSet) {
 	added, removed := a.ArpSwitchSet.Compare(arpSwitchSet)
+
+	// TODO test removed, implement added ; try to refactor
+
+	// TODO what we need here is express it the other way around: device out receives notes states, but outputs
+	// messages to start or stop notes
+	for _, arpSwitch := range removed {
+		if int(arpSwitch.GetIndex()) < len(a.notes) {
+			a.send(
+				midiDefinitions.MakeNoteOffMessage(
+					arpSwitch.GetChannel(),
+					a.notes[arpSwitch.GetIndex()].GetPitch(),
+					arpSwitch.GetVelocity(),
+				),
+			)
+		}
+	}
+
+	// when added, find corresponding note(s) in noteset ( index can appear several times with different octaves )
+	//that is the note in index ;
 	a.ArpSwitchSet = arpSwitchSet
+
 	fmt.Printf("added: %v removed: %v\n", added, removed)
 }
 
-func (a *Arpegiator) AddMessageConsumer(consumer ChannelMessageConsumer) {
+func (a *Arpegiator) send(message []byte) {
+	for _, consumer := range a.messageConsumers {
+		consumer(message)
+	}
+}
+
+func (a *Arpegiator) AddMessageConsumer(consumer MessageConsumer) {
 	a.messageConsumers = append(a.messageConsumers, consumer)
 }
+
+type MessageConsumer func([]byte)

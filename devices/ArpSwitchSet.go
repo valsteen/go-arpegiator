@@ -10,8 +10,8 @@ type ArpSwitchSet set.Set
 
 func newArpSwitchSet(notes NoteSet) ArpSwitchSet {
 	switches := make(ArpSwitchSet, len(notes))
-	notes.Iterate(func(note midiDefinitions.Note) {
-		set.Set(switches).Add(ArpSwitch{Note: note})
+	notes.Iterate(func(note midiDefinitions.NoteOnMessage) {
+		set.Set(switches).Add(ArpSwitch(note))
 	})
 	return switches
 }
