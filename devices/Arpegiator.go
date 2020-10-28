@@ -1,9 +1,5 @@
 package devices
 
-import (
-	midiDefinitions "go-arpegiator/definitions"
-)
-
 type Arpegiator struct {
 	notes            NoteSet
 	noteSetConsumers []NoteSetConsumer
@@ -31,13 +27,10 @@ func (a *Arpegiator) consumeArpSwitchSet(arpSwitchSet ArpSwitchSet) {
 		index := int(e.GetIndex())
 		if index < a.notes.Length() {
 			note := a.notes.At(index)
-			velocity := e.GetVelocity()
-			if note.GetVelocity() == 0 {
-				velocity = 0 // sticky dead note
+			noteOut := e.Transpose(note)
+			if noteOut != nil {
+				noteSet = noteSet.Add(noteOut)
 			}
-
-			noteOut := midiDefinitions.NewNoteOnMessage(note.GetChannel(), note.GetPitch(), velocity)
-			noteSet = noteSet.Add(noteOut)
 		}
 	})
 	a.send(noteSet)

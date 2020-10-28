@@ -2,36 +2,67 @@ package devices
 
 import (
 	"fmt"
-	"go-arpegiator/definitions"
+	m "go-arpegiator/definitions"
 	"go-arpegiator/services"
 	"go-arpegiator/services/set"
 )
 
-type ArpSwitch midiDefinitions.NoteOnMessage
+type a m.NoteOnMessage
+
+type ArpSwitch m.NoteOnMessage
 
 func (a ArpSwitch) GetIndex() byte {
-	return midiDefinitions.NoteOnMessage(a).GetPitch() % 12
+	return m.NoteOnMessage(a).GetPitch() % 12
 }
 
 func (a ArpSwitch) GetOctave() int8 {
 	// C4 is considered octave 0
-	return (int8(midiDefinitions.NoteOnMessage(a).GetPitch()) - 60) / 12
+	return (int8(m.NoteOnMessage(a).GetPitch()) - 48) / 12
+}
+
+func (a ArpSwitch) Transpose(note m.NoteOnMessage) m.NoteOnMessage {
+	velocity := a.GetVelocity()
+	if note.GetVelocity() == 0 {
+		velocity = 0 // sticky dead note
+	}
+
+	pitch := int(note.GetPitch()) + int(a.GetOctave()) * 12
+	if pitch > 127 || pitch < 0 {
+		return nil
+	}
+
+	return m.NewNoteOnMessage(
+		note.GetChannel(),
+		byte(pitch),
+		velocity,
+	)
 }
 
 func (a ArpSwitch) GetChannel() byte {
-	return midiDefinitions.NoteOnMessage(a).GetChannel()
+	return m.NoteOnMessage(a).GetChannel()
 }
 
 func (a ArpSwitch) GetVelocity() byte {
-	return midiDefinitions.NoteOnMessage(a).GetVelocity()
+	return m.NoteOnMessage(a).GetVelocity()
 }
 
 func (a ArpSwitch) String() string {
-	return fmt.Sprintf("switch = (%d %v %d)", midiDefinitions.NoteOnMessage(a).GetChannel(), a.GetOctave(), a.GetIndex())
+	return fmt.Sprintf("switch = (%d %v %d)", m.NoteOnMessage(a).GetChannel(), a.GetOctave(), a.GetIndex())
 }
 
 func (a ArpSwitch) Less(element set.Element) bool {
 	a2, ok := element.(ArpSwitch)
 	services.Must(ok)
-	return a.GetIndex() < a2.GetIndex() || (a.GetIndex() == a2.GetIndex() && a.GetChannel() < a2.GetChannel())
+	if a.GetIndex() < a2.GetIndex() {
+		return true
+	} else if a.GetIndex() > a2.GetIndex() {
+		return false
+	}
+
+	if a.GetOctave() < a2.GetOctave() {
+		return true
+	} else if a.GetOctave() > a2.GetOctave() {
+		return false
+	}
+	return a.GetChannel() < a2.GetChannel()
 }
