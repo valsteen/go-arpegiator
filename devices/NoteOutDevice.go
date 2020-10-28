@@ -24,7 +24,7 @@ func (device *NotesOutDevice) ConsumeNoteSet(noteSet NoteSet) {
 	})
 
 	added.Iterate(func(noteOnMessage midiDefinitions.NoteOnMessage) {
-		if noteOnMessage.GetVelocity() > 0 {
+		if !noteOnMessage.IsDeadNote() {
 			// velocity 0 is a sticky dead note,
 			// we keep other notes in position and don't play this one
 			device.send(

@@ -21,20 +21,22 @@ func (a ArpSwitch) GetOctave() int8 {
 }
 
 func (a ArpSwitch) Transpose(note m.NoteOnMessage) m.NoteOnMessage {
-	velocity := a.GetVelocity()
-	if note.GetVelocity() == 0 {
-		velocity = 0 // sticky dead note
-	}
-
 	pitch := int(note.GetPitch()) + int(a.GetOctave()) * 12
 	if pitch > 127 || pitch < 0 {
 		return nil
 	}
 
+	if note.IsDeadNote() {
+		return m.NewDeadNoteMessage(
+			note.GetChannel(),
+			byte(pitch),
+		)
+	}
+
 	return m.NewNoteOnMessage(
 		note.GetChannel(),
 		byte(pitch),
-		velocity,
+		a.GetVelocity(),
 	)
 }
 
