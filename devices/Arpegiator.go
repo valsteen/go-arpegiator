@@ -2,17 +2,16 @@ package devices
 
 import (
 	midiDefinitions "go-arpegiator/definitions"
-	"go-arpegiator/services/set"
 )
 
 type Arpegiator struct {
-	notes            []midiDefinitions.NoteOnMessage
+	notes            NoteSet
 	noteSetConsumers []NoteSetConsumer
 }
 
 func NewArpegiator(noteIn INotesInDevice, arpIn *NotesInDevice) *Arpegiator {
 	arpegiator := Arpegiator{
-		notes:            make([]midiDefinitions.NoteOnMessage, 0, 12),
+		notes:            NewNoteSet(12),
 		noteSetConsumers: make([]NoteSetConsumer, 0, 10),
 	}
 	noteIn.AddNoteSetConsumer(arpegiator.consumeInNoteSet)
@@ -23,22 +22,22 @@ func NewArpegiator(noteIn INotesInDevice, arpIn *NotesInDevice) *Arpegiator {
 }
 
 func (a *Arpegiator) consumeInNoteSet(noteSet NoteSet) {
-	a.notes = noteSet.Slice()
+	a.notes = noteSet
 }
 
 func (a *Arpegiator) consumeArpSwitchSet(arpSwitchSet ArpSwitchSet) {
-	noteSet := NoteSet{make(set.Set)}
+	noteSet := NewNoteSet(a.notes.Length())
 	arpSwitchSet.Iterate(func(e ArpSwitch) {
 		index := int(e.GetIndex())
-		if index < len(a.notes) {
-			note := a.notes[index]
+		if index < a.notes.Length() {
+			note := a.notes.At(index)
 			velocity := e.GetVelocity()
 			if note.GetVelocity() == 0 {
 				velocity = 0 // sticky dead note
 			}
 
 			noteOut := midiDefinitions.NewNoteOnMessage(note.GetChannel(), note.GetPitch(), velocity)
-			noteSet.Add(noteOut)
+			noteSet = noteSet.Add(noteOut)
 		}
 	})
 	a.send(noteSet)

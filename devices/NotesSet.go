@@ -4,7 +4,6 @@ import (
 	midiDefinitions "go-arpegiator/definitions"
 	"go-arpegiator/services"
 	"go-arpegiator/services/set"
-	"sort"
 )
 
 type NoteSet struct {
@@ -17,19 +16,9 @@ func convertElementToNote(e set.Element) midiDefinitions.NoteOnMessage {
 	return note
 }
 
-func newNoteSetSlice(s []set.Element) []midiDefinitions.NoteOnMessage {
-	notes := make([]midiDefinitions.NoteOnMessage, len(s))
-
-	for i, e := range s {
-		notes[i] = convertElementToNote(e)
-	}
-
-	return notes
-}
-
-func (s NoteSet) Compare(s2 NoteSet) (added []midiDefinitions.NoteOnMessage, removed []midiDefinitions.NoteOnMessage) {
+func (s NoteSet) Compare(s2 NoteSet) (added NoteSet, removed NoteSet) {
 	_added, _removed := s.Set.Compare(s2.Set)
-	return newNoteSetSlice(_added), newNoteSetSlice(_removed)
+	return NoteSet{_added}, NoteSet{_removed}
 }
 
 func (s NoteSet) Iterate(cb func(e midiDefinitions.NoteOnMessage)) {
@@ -38,14 +27,18 @@ func (s NoteSet) Iterate(cb func(e midiDefinitions.NoteOnMessage)) {
 	}
 }
 
-// TODO maybe a set should not be a map but a sorted slice
-func (s NoteSet) Slice() []midiDefinitions.NoteOnMessage {
-	slice := make([]midiDefinitions.NoteOnMessage, 0, len(s.Set))
-	s.Iterate(func(e midiDefinitions.NoteOnMessage) {
-		slice = append(slice, e)
-	})
-	sort.Slice(slice, func(i, j int) bool {
-		return slice[i].GetPitch() < slice[j].GetPitch()
-	})
-	return slice
+func (s NoteSet) Add(e midiDefinitions.NoteOnMessage) NoteSet {
+	return NoteSet{s.Set.Add(e)}
+}
+
+func (s NoteSet) Delete(e set.Element) NoteSet {
+	return NoteSet{s.Set.Delete(e)}
+}
+
+func (s NoteSet) At(i int) midiDefinitions.NoteOnMessage {
+	return convertElementToNote(s.Set.At(i))
+}
+
+func NewNoteSet(cap int) NoteSet {
+	return NoteSet{make(set.Set, 0, cap)}
 }

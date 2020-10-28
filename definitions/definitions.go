@@ -1,7 +1,6 @@
 package midiDefinitions
 
 import (
-	"fmt"
 	"go-arpegiator/services/set"
 )
 
@@ -12,7 +11,6 @@ type ChannelMessage interface {
 	MidiMessage
 	GetChannel() byte
 }
-type NoteHash set.Hash
 
 type Note interface {
 	ChannelMessage
@@ -36,8 +34,4 @@ func AsMidiMessage(bytes []byte) MidiMessage {
 		return CCMessage(bytes)
 	}
 	return nil
-}
-
-func (noteHash NoteHash) String() string {
-	return fmt.Sprintf("(%d %d)", noteHash[0], noteHash[1])
 }

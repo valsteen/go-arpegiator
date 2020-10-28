@@ -2,10 +2,18 @@ package midiDefinitions
 
 import (
 	"fmt"
+	"go-arpegiator/services"
 	"go-arpegiator/services/set"
 )
 
 type NoteOnMessage rawMidiMessage
+
+func (message NoteOnMessage) Less(element set.Element) bool {
+	message2, ok := element.(Note)
+	services.Must(ok)
+	return message.GetPitch() < message2.GetPitch() ||
+		(message.GetPitch() == message2.GetPitch() && message.GetChannel() < message2.GetChannel())
+}
 
 func (message NoteOnMessage) GetChannel() byte {
 	return (message[0]-144)%16 + 1
@@ -17,10 +25,6 @@ func (message NoteOnMessage) GetPitch() byte {
 
 func (message NoteOnMessage) GetVelocity() byte {
 	return message[2]
-}
-
-func (message NoteOnMessage) Hash() set.Hash {
-	return set.Hash([]byte{message.GetChannel(), message.GetPitch()})
 }
 
 func (message NoteOnMessage) String() string {

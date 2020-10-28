@@ -2,7 +2,6 @@ package devices
 
 import (
 	midiDefinitions "go-arpegiator/definitions"
-	"go-arpegiator/services/set"
 )
 
 type StickyNotesInDevice struct {
@@ -23,16 +22,16 @@ func (device *StickyNotesInDevice) ConsumeMessage(channelMessage midiDefinitions
 	switch message := channelMessage.(type) {
 	case midiDefinitions.NoteOnMessage:
 		deadNote := midiDefinitions.NewNoteOnMessage(message.GetChannel(), message.GetPitch(), 0)
-		device.NoteSet.Delete(deadNote) // delete dead note if matching
+		device.NoteSet = device.NoteSet.Delete(deadNote) // delete dead note if matching
 		// TODO -- new notes can replace dead notes , but how to do it ?
 	case midiDefinitions.NoteOffMessage:
 		if len(device.NoteSet.Set) > 0 {
-			device.NoteSet.Delete(message)
+			device.NoteSet = device.NoteSet.Delete(message)
 			if device.allDeadNotes() {
-				device.NoteSet = NoteSet{make(set.Set, 12)}
+				device.NoteSet = NewNoteSet(12)
 			} else {
 				deadNote := midiDefinitions.NewNoteOnMessage(message.GetChannel(), message.GetPitch(), 0)
-				device.NoteSet.Add(deadNote)
+				device.NoteSet = device.NoteSet.Add(deadNote)
 			}
 			device.send()
 			return

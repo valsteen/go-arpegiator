@@ -2,6 +2,7 @@ package midiDefinitions
 
 import (
 	"fmt"
+	"go-arpegiator/services"
 	"go-arpegiator/services/set"
 )
 
@@ -19,10 +20,6 @@ func (message NoteOffMessage) GetVelocity() byte {
 	return message[2]
 }
 
-func (message NoteOffMessage) Hash() set.Hash {
-	return set.Hash([]byte{message.GetChannel(), message.GetPitch()})
-}
-
 func (message NoteOffMessage) String() string {
 	return fmt.Sprintf("Note off: channel %d pitch %d velocity %d", message.GetChannel(),
 		message.GetPitch(),
@@ -35,4 +32,11 @@ func NewNoteOffMessage(channel, pitch, velocity byte) NoteOffMessage {
 	message[1] = pitch
 	message[2] = velocity
 	return message
+}
+
+func (message NoteOffMessage) Less(element set.Element) bool {
+	message2, ok := element.(Note)
+	services.Must(ok)
+	return message.GetPitch() < message2.GetPitch() ||
+		(message.GetPitch() == message2.GetPitch() && message.GetChannel() < message2.GetChannel())
 }

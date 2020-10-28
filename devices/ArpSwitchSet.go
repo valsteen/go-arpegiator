@@ -11,9 +11,9 @@ type ArpSwitchSet struct {
 }
 
 func newArpSwitchSet(notes NoteSet) ArpSwitchSet {
-	switches := make(set.Set, len(notes.Set))
+	switches := make(set.Set, 0, len(notes.Set))
 	notes.Iterate(func(note midiDefinitions.NoteOnMessage) {
-		switches.Add(ArpSwitch(note))
+		switches = switches.Add(ArpSwitch(note))
 	})
 	return ArpSwitchSet{switches}
 }
@@ -25,7 +25,7 @@ func convertElementToArpSwitch(e set.Element) ArpSwitch {
 }
 
 func newArpSwitchSetSlice(s []set.Element) []ArpSwitch {
-	arpSwitches := make([]ArpSwitch, len(s))
+	arpSwitches := make([]ArpSwitch, 0, len(s))
 
 	for i, e := range s {
 		arpSwitches[i] = convertElementToArpSwitch(e)

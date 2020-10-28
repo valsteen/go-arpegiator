@@ -3,7 +3,6 @@ package devices
 import (
 	"fmt"
 	midiDefinitions "go-arpegiator/definitions"
-	"go-arpegiator/services/set"
 )
 
 type INotesInDevice interface {
@@ -18,9 +17,9 @@ type NotesInDevice struct {
 func (device *NotesInDevice) ConsumeMessage(channelMessage midiDefinitions.ChannelMessage) {
 	switch message := channelMessage.(type) {
 	case midiDefinitions.NoteOnMessage:
-		device.NoteSet.Add(message)
+		device.NoteSet = device.NoteSet.Add(message)
 	case midiDefinitions.NoteOffMessage:
-		device.NoteSet.Delete(message)
+		device.NoteSet = device.NoteSet.Delete(message)
 	default:
 		fmt.Println("ignored", channelMessage)
 		return
@@ -37,7 +36,7 @@ func (device *NotesInDevice) send() {
 func NewNoteInDevice() *NotesInDevice {
 	noteSetConsumers := make([]NoteSetConsumer, 0, 10)
 	notesInDevice := &NotesInDevice{
-		NoteSet:          NoteSet{make(set.Set, 12)},
+		NoteSet:          NewNoteSet(12),
 		noteSetConsumers: noteSetConsumers,
 	}
 	_ = INotesInDevice(notesInDevice) // interface check
