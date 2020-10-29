@@ -7,20 +7,18 @@ import (
 	"go-arpegiator/services/set"
 )
 
-type a m.NoteOnMessage
+type PatternIterm m.NoteOnMessage
 
-type ArpSwitch m.NoteOnMessage
-
-func (a ArpSwitch) GetIndex() byte {
+func (a PatternIterm) GetIndex() byte {
 	return m.NoteOnMessage(a).GetPitch() % 12
 }
 
-func (a ArpSwitch) GetOctave() int8 {
+func (a PatternIterm) GetOctave() int8 {
 	// C4 is considered octave 0
 	return (int8(m.NoteOnMessage(a).GetPitch()) - 48) / 12
 }
 
-func (a ArpSwitch) Transpose(note m.NoteOnMessage) m.NoteOnMessage {
+func (a PatternIterm) Transpose(note m.NoteOnMessage) m.NoteOnMessage {
 	pitch := int(note.GetPitch()) + int(a.GetOctave()) * 12
 	if pitch > 127 || pitch < 0 {
 		return nil
@@ -40,20 +38,20 @@ func (a ArpSwitch) Transpose(note m.NoteOnMessage) m.NoteOnMessage {
 	)
 }
 
-func (a ArpSwitch) GetChannel() byte {
+func (a PatternIterm) GetChannel() byte {
 	return m.NoteOnMessage(a).GetChannel()
 }
 
-func (a ArpSwitch) GetVelocity() byte {
+func (a PatternIterm) GetVelocity() byte {
 	return m.NoteOnMessage(a).GetVelocity()
 }
 
-func (a ArpSwitch) String() string {
+func (a PatternIterm) String() string {
 	return fmt.Sprintf("switch = (%d %v %d)", m.NoteOnMessage(a).GetChannel(), a.GetOctave(), a.GetIndex())
 }
 
-func (a ArpSwitch) Less(element set.Element) bool {
-	a2, ok := element.(ArpSwitch)
+func (a PatternIterm) Less(element set.Element) bool {
+	a2, ok := element.(PatternIterm)
 	services.Must(ok)
 	if a.GetIndex() < a2.GetIndex() {
 		return true

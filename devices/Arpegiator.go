@@ -12,7 +12,7 @@ func NewArpegiator(noteIn INotesInDevice, arpIn *NotesInDevice) *Arpegiator {
 	}
 	noteIn.AddNoteSetConsumer(arpegiator.consumeInNoteSet)
 	arpIn.AddNoteSetConsumer(func(noteSet NoteSet) {
-		arpegiator.consumeArpSwitchSet(newArpSwitchSet(noteSet))
+		arpegiator.consumePattern(NewPattern(noteSet))
 	})
 	return &arpegiator
 }
@@ -21,9 +21,9 @@ func (a *Arpegiator) consumeInNoteSet(noteSet NoteSet) {
 	a.notes = noteSet
 }
 
-func (a *Arpegiator) consumeArpSwitchSet(arpSwitchSet ArpSwitchSet) {
+func (a *Arpegiator) consumePattern(pattern Pattern) {
 	noteSet := NewNoteSet(a.notes.Length())
-	arpSwitchSet.Iterate(func(e ArpSwitch) {
+	pattern.Iterate(func(e PatternIterm) {
 		index := int(e.GetIndex())
 		if index < a.notes.Length() {
 			note := a.notes.At(index)
