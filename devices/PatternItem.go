@@ -19,7 +19,7 @@ func (a PatternIterm) GetOctave() int8 {
 }
 
 func (a PatternIterm) Transpose(note m.NoteOnMessage) m.NoteOnMessage {
-	pitch := int(note.GetPitch()) + int(a.GetOctave()) * 12
+	pitch := int(note.GetPitch()) + int(a.GetOctave())*12
 	if pitch > 127 || pitch < 0 {
 		return nil
 	}

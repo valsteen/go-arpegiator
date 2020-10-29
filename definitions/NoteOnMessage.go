@@ -16,7 +16,7 @@ func (n NoteOnMessage) Less(element set.Element) bool {
 }
 
 func (n NoteOnMessage) GetChannel() byte {
-	return (n[0]-144)%16 + 1
+	return (n[0] - NOTE_ON) % 0x10
 }
 
 func (n NoteOnMessage) GetPitch() byte {
@@ -35,7 +35,7 @@ func (n NoteOnMessage) String() string {
 
 func NewNoteOnMessage(channel, pitch, velocity byte) NoteOnMessage {
 	message := make([]byte, 3)
-	message[0] = channel + 144 - 1
+	message[0] = channel + NOTE_ON
 	message[1] = pitch
 	message[2] = velocity
 	return message
@@ -43,7 +43,7 @@ func NewNoteOnMessage(channel, pitch, velocity byte) NoteOnMessage {
 
 func NewDeadNoteMessage(channel, pitch byte) NoteOnMessage {
 	message := make([]byte, 3)
-	message[0] = channel + 144 - 1
+	message[0] = channel + NOTE_ON
 	message[1] = pitch
 	message[2] = 0
 	return message

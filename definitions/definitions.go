@@ -4,6 +4,14 @@ import (
 	"go-arpegiator/services/set"
 )
 
+const (
+	NOTE_OFF  = 0x80
+	NOTE_ON   = 0x90
+	CC        = 0xB0
+	PRESSURE  = 0xD0
+	PITCHBEND = 0xE0
+)
+
 type MidiMessage interface{} // placeholder for now, can be cast to anything in this form
 type rawMidiMessage []byte
 
@@ -19,19 +27,35 @@ type Note interface {
 	set.Element
 }
 
-type CC interface {
+type Cc interface {
 	ChannelMessage
-	GetCC() byte
+	GetCc() byte
+	GetValue() byte
+}
+
+type Pressure interface {
+	ChannelMessage
+	GetChannel() byte
+	GetValue() byte
+}
+
+type PitchBend interface {
+	ChannelMessage
+	GetChannel() byte
 	GetValue() byte
 }
 
 func AsMidiMessage(bytes []byte) MidiMessage {
-	if bytes[0] >= 128 && bytes[0] < 144 {
+	if bytes[0] >= NOTE_OFF && bytes[0] < NOTE_OFF+0x10 {
 		return NoteOffMessage(bytes)
-	} else if bytes[0] >= 144 && bytes[0] < 160 {
+	} else if bytes[0] >= NOTE_ON && bytes[0] < NOTE_ON+0x10 {
 		return NoteOnMessage(bytes)
-	} else if bytes[0] >= 176 && bytes[0] < 192 {
+	} else if bytes[0] >= CC && bytes[0] < CC+0x10 {
 		return CCMessage(bytes)
+	} else if bytes[0] >= PITCHBEND && bytes[0] < PITCHBEND+0x10 {
+		return PitchBendMessage(bytes)
+	} else if bytes[0] >= PRESSURE && bytes[0] < PRESSURE+0x10 {
+		return PressureMessage(bytes)
 	}
 	return nil
 }

@@ -9,7 +9,7 @@ import (
 type NoteOffMessage rawMidiMessage
 
 func (message NoteOffMessage) GetChannel() byte {
-	return (message[0]-128)%16 + 1
+	return (message[0] - NOTE_OFF) % 0x10
 }
 
 func (message NoteOffMessage) GetPitch() byte {
@@ -28,7 +28,7 @@ func (message NoteOffMessage) String() string {
 
 func NewNoteOffMessage(channel, pitch, velocity byte) NoteOffMessage {
 	message := make([]byte, 3)
-	message[0] = channel + 128 - 1
+	message[0] = channel + NOTE_OFF
 	message[1] = pitch
 	message[2] = velocity
 	return message
