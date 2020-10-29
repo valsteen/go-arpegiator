@@ -17,7 +17,7 @@ func (a ArpSwitch) GetIndex() byte {
 
 func (a ArpSwitch) GetOctave() int8 {
 	// C4 is considered octave 0
-	return (int8(m.NoteOnMessage(a).GetPitch()) - 48 + 1) / 12
+	return (int8(m.NoteOnMessage(a).GetPitch()) - 48) / 12
 }
 
 func (a ArpSwitch) Transpose(note m.NoteOnMessage) m.NoteOnMessage {
