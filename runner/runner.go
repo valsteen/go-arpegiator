@@ -2,7 +2,7 @@ package runner
 
 import (
 	"fmt"
-	"gitlab.com/gomidi/midi"
+	midi "gitlab.com/gomidi/midi"
 	"gitlab.com/gomidi/rtmididrv"
 	"go-arpegiator/definitions"
 	"go-arpegiator/devices"
@@ -11,13 +11,13 @@ import (
 
 type ArpegiatorRunner struct {
 	*rtmididrv.Driver
-	midi.In
-	arpInPortPair *midiDefinitions.PortPair
+	midiNotesIn     midi.In
+	patternPortPair *midiDefinitions.PortPair
 }
 
 func (a ArpegiatorRunner) Close() {
-	_ = a.In.Close()
-	a.arpInPortPair.Close()
+	_ = a.midiNotesIn.Close()
+	a.patternPortPair.Close()
 	if a.Driver != nil {
 		_ = a.Driver.Close()
 	}
@@ -27,20 +27,21 @@ func RunArpegiator(notesInName, arpName string) ArpegiatorRunner {
 	driver, err := rtmididrv.New()
 	s.MustNot(err)
 
-	in, err := driver.OpenVirtualIn(notesInName)
+	midiNotesIn, err := driver.OpenVirtualIn(notesInName)
 	s.MustNot(err)
 
 	arpegiatorRunner := ArpegiatorRunner{
-		Driver:        driver,
-		In:            in,
-		arpInPortPair: midiDefinitions.NewPortPair(arpName, driver),
+		Driver:          driver,
+		midiNotesIn:     midiNotesIn,
+		patternPortPair: midiDefinitions.NewPortPair(arpName, driver),
 	}
 
 	//notesInDevice := devices.StickyNotesInDevice{NotesInDevice: devices.NewNoteInDevice()}
 	notesInDevice := devices.NewNoteInDevice()
-	devices.PipeRawMessageToChannelMessage(arpegiatorRunner.In, notesInDevice.ConsumeMessage)
+	devices.RawMessageToChannelMessageAdapter(arpegiatorRunner.midiNotesIn)(notesInDevice.ConsumeMessage)
 	arpInDevice := devices.NewNoteInDevice()
-	devices.PipeRawMessageToChannelMessage(arpegiatorRunner.arpInPortPair.In, arpInDevice.ConsumeMessage)
+	patternInAdapter := devices.RawMessageToChannelMessageAdapter(arpegiatorRunner.patternPortPair.In)
+	patternInAdapter(arpInDevice.ConsumeMessage)
 
 	arpegiator := devices.NewArpegiator(notesInDevice, arpInDevice)
 
@@ -48,9 +49,16 @@ func RunArpegiator(notesInName, arpName string) ArpegiatorRunner {
 	arpegiator.AddNoteSetConsumer(notesOutDevice.ConsumeNoteSet)
 	notesOutDevice.AddMessageConsumer(func(data []byte) {
 		fmt.Println(data)
-		_, err = arpegiatorRunner.arpInPortPair.Out.Write(data)
+		_, err = arpegiatorRunner.patternPortPair.Out.Write(data)
 		s.MustNot(err)
 	})
+
+	patternInAdapter(
+		devices.PressureFilter(func(message midiDefinitions.PressureMessage) {
+			_, err = arpegiatorRunner.patternPortPair.Out.Write(message)
+			s.MustNot(err)
+		}),
+	)
 
 	return arpegiatorRunner
 }

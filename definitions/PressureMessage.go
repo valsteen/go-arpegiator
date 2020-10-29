@@ -5,7 +5,7 @@ import "fmt"
 type PressureMessage rawMidiMessage
 
 func (message PressureMessage) GetValue() byte {
-	return message[2]
+	return message[1]
 }
 
 func (message PressureMessage) GetChannel() byte {
