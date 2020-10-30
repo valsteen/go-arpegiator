@@ -2,66 +2,59 @@ package runner
 
 import (
 	"fmt"
-	midi "gitlab.com/gomidi/midi"
 	"gitlab.com/gomidi/rtmididrv"
 	"go-arpegiator/definitions"
 	"go-arpegiator/devices"
 	s "go-arpegiator/services"
 )
 
-type ArpegiatorRunner struct {
-	*rtmididrv.Driver
-	midiNotesIn     midi.In
-	patternPortPair *midiDefinitions.PortPair
+type IClosable interface {
+	Close() error
 }
 
-func (a ArpegiatorRunner) Close() {
-	_ = a.midiNotesIn.Close()
-	a.patternPortPair.Close()
-	if a.Driver != nil {
-		_ = a.Driver.Close()
+type Closables []IClosable
+
+func (closables Closables) Close() {
+	for _, closable := range closables {
+		_ = closable.Close()
 	}
 }
 
-func RunArpegiator(notesInName, arpName string) ArpegiatorRunner {
+func NewClosables(closables ...IClosable) Closables {
+	return closables
+}
+
+func RunArpegiator(notesInName, arpName string) Closables {
 	driver, err := rtmididrv.New()
 	s.MustNot(err)
 
 	midiNotesIn, err := driver.OpenVirtualIn(notesInName)
 	s.MustNot(err)
 
-	arpegiatorRunner := ArpegiatorRunner{
-		Driver:          driver,
-		midiNotesIn:     midiNotesIn,
-		patternPortPair: midiDefinitions.NewPortPair(arpName, driver),
-	}
+	patternMidiIn, patternMidiOut := midiDefinitions.NewPortPair(arpName, driver)
+
+	closer := NewClosables(driver, midiNotesIn, patternMidiIn, patternMidiOut)
 
 	// alternate method
 	// notesInDevice := devices.StickyNotesInDevice{NotesInDevice: devices.NewNoteInDevice()}
 	notesInDevice := devices.NewNoteInDevice()
 	patternInDevice := devices.NewNoteInDevice()
-	notesOutDevice := devices.NewNoteOutDevice()
+	notesOutDevice := devices.NewNoteOutDevice(
+		// notes out device outputs to midi out and console
+		devices.FailOnWriteErrorAdapter(patternMidiOut.Write),
+		devices.FailOnPrintErrorAdapter(fmt.Println),
+	)
 
-	// give notes and pattern devices to arpegiator
-	arpegiator := devices.NewArpegiator(notesInDevice, patternInDevice)
-	// arpegiator outputs to notes output device
-	arpegiator.AddNoteSetConsumer(notesOutDevice.ConsumeNoteSet)
+	// give notes and pattern devices to arpegiator, outputs to notes output device
+	devices.NewArpegiator(notesInDevice, patternInDevice, notesOutDevice.ConsumeNoteSet)
 
-	// adapter subscribes to midiNotesIn, then gives notesInDevice as receiver
-	midiInAdapter := devices.RawMessageToChannelMessageAdapter(arpegiatorRunner.midiNotesIn)
-	midiInAdapter(notesInDevice.ConsumeMessage)
+	devices.RawMessageToChannelMessageAdapter(midiNotesIn, notesInDevice.ConsumeMessage)
+	devices.RawMessageToChannelMessageAdapter(
+		patternMidiIn,
+		patternInDevice.ConsumeMessage,
+		// pressure is filtered out from notes and pattern devices, consume then from pattern in and output to midi out
+		devices.PressureFilter(devices.FailOnWritePressureAdapter(patternMidiOut.Write)),
+	)
 
-	// adapter subscribes to pattern in, then give patternInDevice as receiver
-	patternInAdapter := devices.RawMessageToChannelMessageAdapter(arpegiatorRunner.patternPortPair.In)
-	patternInAdapter(patternInDevice.ConsumeMessage)
-
-	// notes out device outputs to midi out and console
-	notesOutDevice.AddMessageConsumer(devices.FailOnWriteErrorAdapter(arpegiatorRunner.patternPortPair.Out.Write))
-	notesOutDevice.AddMessageConsumer(devices.FailOnPrintErrorAdapter(fmt.Println))
-
-	// pressure is filtered out from notes and pattern devices, consume then from pattern in and output to midi out
-	addPressureConsumer := devices.PressureFilter(patternInAdapter)
-	addPressureConsumer(devices.FailOnWritePressureAdapter(arpegiatorRunner.patternPortPair.Out.Write))
-
-	return arpegiatorRunner
+	return closer
 }

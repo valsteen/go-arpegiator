@@ -1,6 +1,8 @@
 package midiDefinitions
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type PitchBendMessage rawMidiMessage
 

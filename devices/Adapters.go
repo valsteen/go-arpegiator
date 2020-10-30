@@ -6,14 +6,13 @@ import (
 	"go-arpegiator/services"
 )
 
+type MessageConsumer func(data []byte)
 type ChannelMessageConsumer func(message m.ChannelMessage)
 type NoteSetConsumer func(notes NoteSet)
 type PressureMessageConsumer func(message m.PressureMessage)
 type PitchBendMessageConsumer func(message m.PitchBendMessage)
 
-func RawMessageToChannelMessageAdapter(in midi.In) (consumer func(ChannelMessageConsumer)) {
-	consumers := make([]ChannelMessageConsumer, 0)
-
+func RawMessageToChannelMessageAdapter(in midi.In, consumers ...ChannelMessageConsumer) {
 	err := in.SetListener(func(data []byte, deltaMicroseconds int64) {
 		midiMessage := m.AsMidiMessage(data)
 		for _, consumer := range consumers {
@@ -23,32 +22,24 @@ func RawMessageToChannelMessageAdapter(in midi.In) (consumer func(ChannelMessage
 		}
 	})
 	services.MustNot(err)
-
-	return func(consumer ChannelMessageConsumer) {
-		consumers = append(consumers, consumer)
-	}
 }
 
-func PressureFilter(consumerReceiver func(ChannelMessageConsumer)) func(consumer PressureMessageConsumer) {
-	consumers := make([]PressureMessageConsumer, 0)
-
-	consumerReceiver(func(message m.ChannelMessage) {
+func PressureFilter(consumers ...PressureMessageConsumer) ChannelMessageConsumer {
+	return func(message m.ChannelMessage) {
 		if pressureMessage, ok := message.(m.PressureMessage); ok {
 			for _, consumer := range consumers {
 				consumer(pressureMessage)
 			}
 		}
-	})
-
-	return func(consumer PressureMessageConsumer) {
-		consumers = append(consumers, consumer)
 	}
 }
 
-func PitchBendFilter(consumer PitchBendMessageConsumer) ChannelMessageConsumer {
+func PitchBendFilter(consumers ...PitchBendMessageConsumer) ChannelMessageConsumer {
 	return func(message m.ChannelMessage) {
-		if pressureMessage, ok := message.(m.PitchBendMessage); ok {
-			consumer(pressureMessage)
+		if pitchBendMessage, ok := message.(m.PitchBendMessage); ok {
+			for _, consumer := range consumers {
+				consumer(pitchBendMessage)
+			}
 		}
 	}
 }

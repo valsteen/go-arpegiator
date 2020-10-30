@@ -5,10 +5,10 @@ type Arpegiator struct {
 	noteSetConsumers []NoteSetConsumer
 }
 
-func NewArpegiator(noteIn INotesInDevice, arpIn *NotesInDevice) *Arpegiator {
+func NewArpegiator(noteIn INotesInDevice, arpIn INotesInDevice, consumers ...NoteSetConsumer) *Arpegiator {
 	arpegiator := Arpegiator{
 		notes:            NewNoteSet(12),
-		noteSetConsumers: make([]NoteSetConsumer, 0, 10),
+		noteSetConsumers: consumers,
 	}
 	noteIn.AddNoteSetConsumer(arpegiator.consumeInNoteSet)
 	arpIn.AddNoteSetConsumer(func(noteSet NoteSet) {
@@ -40,8 +40,4 @@ func (a *Arpegiator) send(noteSet NoteSet) {
 	for _, consumer := range a.noteSetConsumers {
 		consumer(noteSet)
 	}
-}
-
-func (a *Arpegiator) AddNoteSetConsumer(consumer NoteSetConsumer) {
-	a.noteSetConsumers = append(a.noteSetConsumers, consumer)
 }

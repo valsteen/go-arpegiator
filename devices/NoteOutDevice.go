@@ -42,19 +42,13 @@ func (device *NotesOutDevice) ConsumeNoteSet(noteSet NoteSet) {
 	//	fmt.Printf("added: %v removed: %v\n", added, removed)
 }
 
-func NewNoteOutDevice() *NotesOutDevice {
+func NewNoteOutDevice(messageConsumers ...MessageConsumer) *NotesOutDevice {
 	notesInDevice := NotesOutDevice{
 		noteSet:          NewNoteSet(12),
-		messageConsumers: make([]MessageConsumer, 0, 10),
+		messageConsumers: messageConsumers,
 	}
 	return &notesInDevice
 }
-
-func (device *NotesOutDevice) AddMessageConsumer(consumer MessageConsumer) {
-	device.messageConsumers = append(device.messageConsumers, consumer)
-}
-
-type MessageConsumer func(data []byte)
 
 func (device *NotesOutDevice) send(message []byte) {
 	for _, consumer := range device.messageConsumers {
