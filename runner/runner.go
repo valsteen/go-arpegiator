@@ -36,29 +36,32 @@ func RunArpegiator(notesInName, arpName string) ArpegiatorRunner {
 		patternPortPair: midiDefinitions.NewPortPair(arpName, driver),
 	}
 
-	//notesInDevice := devices.StickyNotesInDevice{NotesInDevice: devices.NewNoteInDevice()}
+	// alternate method
+	// notesInDevice := devices.StickyNotesInDevice{NotesInDevice: devices.NewNoteInDevice()}
 	notesInDevice := devices.NewNoteInDevice()
-	devices.RawMessageToChannelMessageAdapter(arpegiatorRunner.midiNotesIn)(notesInDevice.ConsumeMessage)
-	arpInDevice := devices.NewNoteInDevice()
-	patternInAdapter := devices.RawMessageToChannelMessageAdapter(arpegiatorRunner.patternPortPair.In)
-	patternInAdapter(arpInDevice.ConsumeMessage)
-
-	arpegiator := devices.NewArpegiator(notesInDevice, arpInDevice)
-
+	patternInDevice := devices.NewNoteInDevice()
 	notesOutDevice := devices.NewNoteOutDevice()
-	arpegiator.AddNoteSetConsumer(notesOutDevice.ConsumeNoteSet)
-	notesOutDevice.AddMessageConsumer(func(data []byte) {
-		fmt.Println(data)
-		_, err = arpegiatorRunner.patternPortPair.Out.Write(data)
-		s.MustNot(err)
-	})
 
-	patternInAdapter(
-		devices.PressureFilter(func(message midiDefinitions.PressureMessage) {
-			_, err = arpegiatorRunner.patternPortPair.Out.Write(message)
-			s.MustNot(err)
-		}),
-	)
+	// give notes and pattern devices to arpegiator
+	arpegiator := devices.NewArpegiator(notesInDevice, patternInDevice)
+	// arpegiator outputs to notes output device
+	arpegiator.AddNoteSetConsumer(notesOutDevice.ConsumeNoteSet)
+
+	// adapter subscribes to midiNotesIn, then gives notesInDevice as receiver
+	midiInAdapter := devices.RawMessageToChannelMessageAdapter(arpegiatorRunner.midiNotesIn)
+	midiInAdapter(notesInDevice.ConsumeMessage)
+
+	// adapter subscribes to pattern in, then give patternInDevice as receiver
+	patternInAdapter := devices.RawMessageToChannelMessageAdapter(arpegiatorRunner.patternPortPair.In)
+	patternInAdapter(patternInDevice.ConsumeMessage)
+
+	// notes out device outputs to midi out and console
+	notesOutDevice.AddMessageConsumer(devices.FailOnWriteErrorAdapter(arpegiatorRunner.patternPortPair.Out.Write))
+	notesOutDevice.AddMessageConsumer(devices.FailOnPrintErrorAdapter(fmt.Println))
+
+	// pressure is filtered out from notes and pattern devices, consume then from pattern in and output to midi out
+	addPressureConsumer := devices.PressureFilter(patternInAdapter)
+	addPressureConsumer(devices.FailOnWritePressureAdapter(arpegiatorRunner.patternPortPair.Out.Write))
 
 	return arpegiatorRunner
 }

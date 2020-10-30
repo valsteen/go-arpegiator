@@ -29,11 +29,19 @@ func RawMessageToChannelMessageAdapter(in midi.In) (consumer func(ChannelMessage
 	}
 }
 
-func PressureFilter(consumer PressureMessageConsumer) (receiver func(message m.ChannelMessage)) {
-	return func(message m.ChannelMessage) {
+func PressureFilter(consumerReceiver func(ChannelMessageConsumer)) func(consumer PressureMessageConsumer) {
+	consumers := make([]PressureMessageConsumer, 0)
+
+	consumerReceiver(func(message m.ChannelMessage) {
 		if pressureMessage, ok := message.(m.PressureMessage); ok {
-			consumer(pressureMessage)
+			for _, consumer := range consumers {
+				consumer(pressureMessage)
+			}
 		}
+	})
+
+	return func(consumer PressureMessageConsumer) {
+		consumers = append(consumers, consumer)
 	}
 }
 
@@ -42,5 +50,26 @@ func PitchBendFilter(consumer PitchBendMessageConsumer) ChannelMessageConsumer {
 		if pressureMessage, ok := message.(m.PitchBendMessage); ok {
 			consumer(pressureMessage)
 		}
+	}
+}
+
+func FailOnWriteErrorAdapter(write func(b []byte) (int, error)) func(data []byte) {
+	return func(data []byte) {
+		_, err := write(data)
+		services.MustNot(err)
+	}
+}
+
+func FailOnPrintErrorAdapter(cb func(a ...interface{}) (n int, err error)) MessageConsumer {
+	return func(data []byte) {
+		_, err := cb(data)
+		services.MustNot(err)
+	}
+}
+
+func FailOnWritePressureAdapter(write func(b []byte) (int, error)) PressureMessageConsumer {
+	return func(message m.PressureMessage) {
+		_, err := write(message)
+		services.MustNot(err)
 	}
 }
