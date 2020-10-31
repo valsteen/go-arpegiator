@@ -11,21 +11,21 @@ type Pattern struct {
 }
 
 func NewPattern(notes NoteSet) Pattern {
-	switches := make(set.Set, 0, len(notes.Set))
-	notes.Iterate(func(note midiDefinitions.NoteOnMessage) {
-		switches = switches.Add(PatternIterm(note))
+	patterns := make(set.Set, 0, len(notes.Set))
+	notes.Iterate(func(note midiDefinitions.RichNote) {
+		patterns = patterns.Add(PatternItem(note))
 	})
-	return Pattern{switches}
+	return Pattern{patterns}
 }
 
-func convertElementToPattern(e set.Element) PatternIterm {
-	pattern, ok := e.(PatternIterm)
+func convertElementToPattern(e set.Element) PatternItem {
+	pattern, ok := e.(PatternItem)
 	services.Must(ok)
 	return pattern
 }
 
-func newPatternSetSlice(s []set.Element) []PatternIterm {
-	patternes := make([]PatternIterm, 0, len(s))
+func newPatternSetSlice(s []set.Element) []PatternItem {
+	patternes := make([]PatternItem, 0, len(s))
 
 	for i, e := range s {
 		patternes[i] = convertElementToPattern(e)
@@ -34,12 +34,12 @@ func newPatternSetSlice(s []set.Element) []PatternIterm {
 	return patternes
 }
 
-func (s Pattern) Compare(s2 Pattern) ([]PatternIterm, []PatternIterm) {
+func (s Pattern) Compare(s2 Pattern) ([]PatternItem, []PatternItem) {
 	_added, _removed := s.Set.Compare(s2.Set)
 	return newPatternSetSlice(_added), newPatternSetSlice(_removed)
 }
 
-func (s Pattern) Iterate(cb func(e PatternIterm)) {
+func (s Pattern) Iterate(cb func(e PatternItem)) {
 	for _, e := range s.Set {
 		cb(convertElementToPattern(e))
 	}

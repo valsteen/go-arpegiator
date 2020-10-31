@@ -23,12 +23,12 @@ func (a *Arpegiator) consumeInNoteSet(noteSet NoteSet) {
 
 func (a *Arpegiator) consumePattern(pattern Pattern) {
 	noteSet := NewNoteSet(a.notes.Length())
-	pattern.Iterate(func(e PatternIterm) {
+	pattern.Iterate(func(e PatternItem) {
 		index := int(e.GetIndex())
 		if index < a.notes.Length() {
 			note := a.notes.At(index)
-			noteOut := e.Transpose(note)
-			if noteOut != nil {
+			noteOut, err := e.Transpose(note)
+			if err != nil {
 				noteSet = noteSet.Add(noteOut)
 			}
 		}

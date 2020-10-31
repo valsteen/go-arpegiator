@@ -29,6 +29,11 @@ func (s Set) Add(e Element) Set {
 		} else if e.Less(s[i]) {
 			out = append(out, e)
 			break
+		} else {
+			// equals, replace with newest, skip to next
+			out = append(out, e)
+			i++
+			break
 		}
 	}
 	for ; i < len(s); i++ {
@@ -41,7 +46,7 @@ func (s Set) Add(e Element) Set {
 }
 
 func (s Set) Subtract(s2 Set) Set {
-	out := make(Set, len(s))
+	out := make(Set, 0, len(s))
 	copy(out, s)
 
 	for _, e := range s2 {

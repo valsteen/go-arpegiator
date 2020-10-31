@@ -49,12 +49,7 @@ func RunArpegiator(notesInName, arpName string) Closables {
 	devices.NewArpegiator(notesInDevice, patternInDevice, notesOutDevice.ConsumeNoteSet)
 
 	devices.RawMessageToChannelMessageAdapter(midiNotesIn, notesInDevice.ConsumeMessage)
-	devices.RawMessageToChannelMessageAdapter(
-		patternMidiIn,
-		patternInDevice.ConsumeMessage,
-		// pressure is filtered out from notes and pattern devices, consume then from pattern in and output to midi out
-		devices.PressureFilter(devices.FailOnWritePressureAdapter(patternMidiOut.Write)),
-	)
+	devices.RawMessageToChannelMessageAdapter(patternMidiIn, patternInDevice.ConsumeMessage)
 
 	return closer
 }

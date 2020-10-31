@@ -9,13 +9,13 @@ type StickyNotesInDevice struct {
 }
 
 func (device *StickyNotesInDevice) allDeadNotes() bool {
-	return device.NoteSet.Count(m.NoteOnMessage.IsDeadNote) == 0
+	return device.NoteSet.Count(m.RichNote.IsDeadNote) == 0
 }
 
 func (device *StickyNotesInDevice) ConsumeMessage(channelMessage m.ChannelMessage) {
 	switch message := channelMessage.(type) {
 	case m.NoteOnMessage:
-		deadNote := m.NewDeadNoteMessage(message.GetChannel(), message.GetPitch())
+		deadNote := m.NewDeadNote(message.GetChannel(), message.GetPitch())
 		device.NoteSet = device.NoteSet.Delete(deadNote) // delete dead note if matching
 		// TODO -- new notes can replace dead notes , but how to do it ?
 	case m.NoteOffMessage:
@@ -24,7 +24,7 @@ func (device *StickyNotesInDevice) ConsumeMessage(channelMessage m.ChannelMessag
 			if device.allDeadNotes() {
 				device.NoteSet = NewNoteSet(12)
 			} else {
-				deadNote := m.NewNoteOnMessage(message.GetChannel(), message.GetPitch(), 0)
+				deadNote := m.NewDeadNote(message.GetChannel(), message.GetPitch())
 				device.NoteSet = device.NoteSet.Add(deadNote)
 			}
 			device.send()

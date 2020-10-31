@@ -10,9 +10,10 @@ type NotesOutDevice struct {
 }
 
 func (device *NotesOutDevice) ConsumeNoteSet(noteSet NoteSet) {
+	// TODO keep track of pressure/pitchbend and send accordingly
 	added, removed := device.noteSet.Compare(noteSet)
 
-	removed.Iterate(func(noteOnMessage midiDefinitions.NoteOnMessage) {
+	removed.Iterate(func(noteOnMessage midiDefinitions.RichNote) {
 		device.send(
 			midiDefinitions.NewNoteOffMessage(
 				noteOnMessage.GetChannel(),
@@ -23,7 +24,7 @@ func (device *NotesOutDevice) ConsumeNoteSet(noteSet NoteSet) {
 		)
 	})
 
-	added.Iterate(func(noteOnMessage midiDefinitions.NoteOnMessage) {
+	added.Iterate(func(noteOnMessage midiDefinitions.RichNote) {
 		if !noteOnMessage.IsDeadNote() {
 			// velocity 0 is a sticky dead note,
 			// we keep other notes in position and don't play this one

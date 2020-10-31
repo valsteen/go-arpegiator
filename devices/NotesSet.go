@@ -10,8 +10,8 @@ type NoteSet struct {
 	set.Set
 }
 
-func convertElementToNote(e set.Element) m.NoteOnMessage {
-	note, ok := e.(m.NoteOnMessage)
+func convertElementToNote(e set.Element) m.RichNote {
+	note, ok := e.(m.RichNote)
 	services.Must(ok)
 	return note
 }
@@ -21,21 +21,21 @@ func (s NoteSet) Compare(s2 NoteSet) (added NoteSet, removed NoteSet) {
 	return NoteSet{_added}, NoteSet{_removed}
 }
 
-func (s NoteSet) Iterate(cb func(e m.NoteOnMessage)) {
+func (s NoteSet) Iterate(cb func(e m.RichNote)) {
 	for _, e := range s.Set {
 		cb(convertElementToNote(e))
 	}
 }
 
-func (s NoteSet) Add(e m.NoteOnMessage) NoteSet {
+func (s NoteSet) Add(e m.RichNote) NoteSet {
 	return NoteSet{s.Set.Add(e)}
 }
 
-func (s NoteSet) Delete(e set.Element) NoteSet {
+func (s NoteSet) Delete(e m.Note) NoteSet {
 	return NoteSet{s.Set.Delete(e)}
 }
 
-func (s NoteSet) At(i int) m.NoteOnMessage {
+func (s NoteSet) At(i int) m.RichNote {
 	return convertElementToNote(s.Set.At(i))
 }
 
@@ -43,9 +43,9 @@ func NewNoteSet(cap int) NoteSet {
 	return NoteSet{make(set.Set, 0, cap)}
 }
 
-func (s NoteSet) Count(condition func(message m.NoteOnMessage) bool) int {
+func (s NoteSet) Count(condition func(message m.RichNote) bool) int {
 	count := 0
-	s.Iterate(func(e m.NoteOnMessage) {
+	s.Iterate(func(e m.RichNote) {
 		if condition(e) {
 			count++
 		}

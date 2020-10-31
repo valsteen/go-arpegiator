@@ -7,51 +7,61 @@ import (
 	"go-arpegiator/services/set"
 )
 
-type PatternIterm m.NoteOnMessage
+type PatternItem m.RichNote
 
-func (a PatternIterm) GetIndex() byte {
-	return m.NoteOnMessage(a).GetPitch() % 12
+func (a PatternItem) GetIndex() byte {
+	return m.RichNote(a).GetPitch() % 12
 }
 
-func (a PatternIterm) GetOctave() int8 {
+func (a PatternItem) GetOctave() int8 {
 	// C4 is considered octave 0
-	return (int8(m.NoteOnMessage(a).GetPitch()) - 48) / 12
+	return (int8(m.RichNote(a).GetPitch()) - 48) / 12
 }
 
-func (a PatternIterm) Transpose(note m.NoteOnMessage) m.NoteOnMessage {
+type TransposeError string
+
+func (e TransposeError) Error() string {
+	return string(e)
+}
+
+func (a PatternItem) Transpose(note m.RichNote) (m.RichNote, error) {
 	pitch := int(note.GetPitch()) + int(a.GetOctave())*12
 	if pitch > 127 || pitch < 0 {
-		return nil
+		return m.RichNote{}, TransposeError("transpose out of bounds")
 	}
 
 	if note.IsDeadNote() {
-		return m.NewDeadNoteMessage(
+		return m.NewDeadNote(
 			a.GetChannel(),
 			byte(pitch),
-		)
+		), nil
 	}
 
-	return m.NewNoteOnMessage(
-		a.GetChannel(),
-		byte(pitch),
-		a.GetVelocity(),
-	)
+	return m.RichNote{
+		NoteOnMessage: m.NewNoteOnMessage(
+			a.GetChannel(),
+			byte(pitch),
+			a.GetVelocity(),
+		),
+		PressureMessage:  a.PressureMessage,
+		PitchBendMessage: a.PitchBendMessage,
+	}, nil
 }
 
-func (a PatternIterm) GetChannel() byte {
-	return m.NoteOnMessage(a).GetChannel()
+func (a PatternItem) GetChannel() byte {
+	return m.RichNote(a).GetChannel()
 }
 
-func (a PatternIterm) GetVelocity() byte {
-	return m.NoteOnMessage(a).GetVelocity()
+func (a PatternItem) GetVelocity() byte {
+	return m.RichNote(a).GetVelocity()
 }
 
-func (a PatternIterm) String() string {
-	return fmt.Sprintf("switch = (%d %v %d)", m.NoteOnMessage(a).GetChannel(), a.GetOctave(), a.GetIndex())
+func (a PatternItem) String() string {
+	return fmt.Sprintf("switch = (%d %v %d)", m.RichNote(a).GetChannel(), a.GetOctave(), a.GetIndex())
 }
 
-func (a PatternIterm) Less(element set.Element) bool {
-	a2, ok := element.(PatternIterm)
+func (a PatternItem) Less(element set.Element) bool {
+	a2, ok := element.(PatternItem)
 	services.Must(ok)
 	if a.GetIndex() < a2.GetIndex() {
 		return true

@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	NOTE_OFF  = 0x80
-	NOTE_ON   = 0x90
+	NOTEOFF   = 0x80
+	NOTEON    = 0x90
 	CC        = 0xB0
 	PRESSURE  = 0xD0
 	PITCHBEND = 0xE0
@@ -46,9 +46,9 @@ type PitchBend interface {
 }
 
 func AsMidiMessage(bytes []byte) MidiMessage {
-	if bytes[0] >= NOTE_OFF && bytes[0] < NOTE_OFF+0x10 {
+	if bytes[0] >= NOTEOFF && bytes[0] < NOTEOFF+0x10 {
 		return NoteOffMessage(bytes)
-	} else if bytes[0] >= NOTE_ON && bytes[0] < NOTE_ON+0x10 {
+	} else if bytes[0] >= NOTEON && bytes[0] < NOTEON+0x10 {
 		return NoteOnMessage(bytes)
 	} else if bytes[0] >= CC && bytes[0] < CC+0x10 {
 		return CCMessage(bytes)

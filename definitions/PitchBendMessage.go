@@ -7,7 +7,7 @@ import (
 
 type PitchBendMessage rawMidiMessage
 
-func (message PitchBendMessage) GetValue() byte {
+func (message PitchBendMessage) GetPitchBend() byte {
 	return message[1]
 }
 
@@ -16,7 +16,7 @@ func (message PitchBendMessage) GetChannel() byte {
 }
 
 func (message PitchBendMessage) String() string {
-	return fmt.Sprintf("pitchbend: channel %d value %d", message.GetChannel(), message.GetValue())
+	return fmt.Sprintf("pitchbend: channel %d value %d", message.GetChannel(), message.GetPitchBend())
 }
 
 func NewPitchBendMessage(channel byte, semitones float64) PitchBendMessage {
