@@ -33,12 +33,12 @@ func (n NoteOnMessage) String() string {
 		n.GetVelocity())
 }
 
-func NewNoteOnMessage(channel, pitch, velocity byte) NoteOnMessage {
-	message := make([]byte, 3)
-	message[0] = channel + NOTE_ON
-	message[1] = pitch
-	message[2] = velocity
-	return message
+func NewNoteOnMessage(channel, pitch, velocity byte) []byte {
+	return []byte{
+		channel + NOTE_ON,
+		pitch,
+		velocity,
+	}
 }
 
 func NewDeadNoteMessage(channel, pitch byte) NoteOnMessage {

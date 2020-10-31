@@ -27,11 +27,11 @@ func (message NoteOffMessage) String() string {
 }
 
 func NewNoteOffMessage(channel, pitch, velocity byte) NoteOffMessage {
-	message := make([]byte, 3)
-	message[0] = channel + NOTE_OFF
-	message[1] = pitch
-	message[2] = velocity
-	return message
+	return []byte{
+		channel + NOTE_OFF,
+		pitch,
+		velocity,
+	}
 }
 
 func (message NoteOffMessage) Less(element set.Element) bool {
