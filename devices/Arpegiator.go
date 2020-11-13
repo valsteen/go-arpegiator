@@ -28,7 +28,7 @@ func (a *Arpegiator) consumePattern(pattern Pattern) {
 		if index < a.notes.Length() {
 			note := a.notes.At(index)
 			noteOut, err := e.Transpose(note)
-			if err != nil {
+			if err == nil {
 				noteSet = noteSet.Add(noteOut)
 			}
 		}

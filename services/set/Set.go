@@ -46,7 +46,7 @@ func (s Set) Add(e Element) Set {
 }
 
 func (s Set) Subtract(s2 Set) Set {
-	out := make(Set, 0, len(s))
+	out := make(Set, len(s))
 	copy(out, s)
 
 	for _, e := range s2 {
