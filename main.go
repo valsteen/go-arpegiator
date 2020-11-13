@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	devices := runner.RunArpegiator("NotesIn", "Arp")
+	devices := runner.RunArpegiator("NotesIn", "Pattern")
 	defer devices.Close()
 	runner.Sleep()
 }
