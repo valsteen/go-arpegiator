@@ -15,7 +15,7 @@ func (a PatternItem) GetIndex() byte {
 
 func (a PatternItem) GetOctave() int8 {
 	// C4 is considered octave 0
-	return (int8(m.RichNote(a).GetPitch()) - 48) / 12
+	return int8(m.RichNote(a).GetPitch()) / 12 - 4
 }
 
 type TransposeError string
